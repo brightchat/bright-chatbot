@@ -1,4 +1,4 @@
-# ChatGPT Mobile Chatbot
+# OpenAI (ChatGPT) Mobile Chatbot
 
 Application that uses the OpenAI API to carry out a conversation with the OpenAI's incredible language model [ChatGPT](https://openai.com/blog/chatgpt) right from your phone, supports sending messages to WhatApp or SMS by using the Twilio Provider.
 
@@ -76,11 +76,11 @@ with just a few commands.
 The script handles the creation of the DynamoDB tables, the creation of the Lambda functions, and an API Gateway endpoint
 that can be used as the Callback URL on Twilio.
 
-Just go to the `deploy/cloudformation` directory and follow the instructions in the [Readme](deploy/cloudformation/README.md) provided to deploy the application.
+**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application.**
 
 ### Local setup with the Python Client
 
-Then use the `OpenAIChatClient` to have ChatGPT send messages to an user in response to a request coming
+You can use the `OpenAIChatClient` class to have ChatGPT send messages to an user in response to a request coming
 from a supported provider.
 
 The following example shows how to use the `OpenAIChatClient` with the `TwilioProvider` and the `DynamodbBackend` to
