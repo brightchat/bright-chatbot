@@ -71,10 +71,12 @@ Variable Name | Description
 ### Deploy to your Cloud Infrastructure in AWS
 
 There is a handy CloudFormation script that you can use to easily deploy the Application on your own AWS account
-with just a few commands.
+with just a few commands. The deployed application will be ready to use with the Twilio Provider and the DynamoDB backend.
+It will also be highly scalable and fault tolerant by using AWS' family of serverless resources.
 
-The script handles the creation of the DynamoDB tables, the creation of the Lambda functions, and an API Gateway endpoint
-that can be used as the Callback URL on Twilio.
+The cloudformation stack handles the creation of the DynamoDB tables,
+the creation of the Lambda functions, and an API Gateway endpoint
+that can be used as the Callback URL of your Twilio messaging service.
 
 **Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application.**
 
