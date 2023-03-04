@@ -1,0 +1,8 @@
+deploy/
+deploy/**/*
+docs/
+docs/**/*
+build/
+build/**/*
+tmp/
+tmp/**/*
