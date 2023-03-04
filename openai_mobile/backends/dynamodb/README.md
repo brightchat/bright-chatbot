@@ -1,0 +1,47 @@
+# DynamoDB Backend
+
+## DynamoDB Tables
+
+### Sessions
+
+Logs the current active sessions that an user is on. Sessions are unique for each user.
+
+| Property | Description | Type | Is PK | Is SK |
+| -------- | ----------- | ---- | ----- | ----- |
+| UserId | Identifier of the **User** object associated with the session | Text (SHA256 from user's phone number) | Yes | No
+| SessionId | Identifier of the session that an user is on | Text (UserId + ":" + TimestampCreated) | No | Yes
+| TimestampCreated | UNIX Timestamp for when the session was created | Numeric | No | No
+| TimestampFinished | UNIX Timestamp for when the session was forcefully finished | Numeric | No | No
+| SessionTTL | UNIX Timestamp denoting the time when the session will expire (30 mins after session creation) | Numeric | No | No
+
+> `SessionTTL` is a TimeToLive property that specifies date and time when the item in the table will expire (See [DynamoDB TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html)).
+
+### Chats
+
+Logs the messages and responses sent in a chat during a session.
+
+| Property | Description | Type | Is PK | Is SK |
+| -------- | ----------- | ---- | ----- | ----- |
+| SessionId | Identifier of the session, ie. a chat between the user and the bot | Text (UserId + ":" + TimestampCreated) | Yes | No
+| UserId | Identifier of the **User** associated with the chat | Text (Hashed phone number) | No | No
+| Message | Message sent in the chat during the respective session | Text (Max 500 chars) | No | No
+| TimestampCreated | UNIX Timestamp for when the message was created by either the bot or the user | Numeric | No | Yes
+| Agent | Agent that sent the message. Can be either `assistant` (Our bot) or `user` | Text (Enum) | No | No
+| ImageId | When response contains an image, unique identifier of the image in the `ImageResponses` table | Text (SHA256 from `image_b64`) | No | No
+
+> Global seconday index "UserIdGlobalIndex" on: `(UserId (PK), TimestampCreated (SK))`.
+
+### ImageResponses
+
+Image responses obtained from the image-generation API (*Dall-E*).
+
+| Property | Description | Type | Is PK | Is SK |
+| -------- | ----------- | ---- | ----- | ----- |
+| ImageId | Unique identifier for the image | Text (SHA256 from the `ImageData` content) | Yes | No
+| UserId | Identifier of the **User** that generated the image | Text (Hashed phone number) | No | No
+| Prompt | Natural language prompt sent to the Image generation API | Text | No | No
+| Message | Message that prompted the image generation process | Text | No | No
+| ImageURI | URI of the image | Text | No | No
+| TimestampCreated | UNIX Timestamp for when the image was created by the Image generation API | Numeric | No | No
+
+> Global seconday index "PromptGlobalIndex" on: `(Prompt (PK), TimestampCreated (Sk))`.

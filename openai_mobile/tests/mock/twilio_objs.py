@@ -1,0 +1,2 @@
+class MessageInstanceResponse:
+    sid = "mocksid"
