@@ -126,7 +126,6 @@ class OpenAIChatClient:
             extra_tasks.append(img_prm)
         for task in extra_tasks:
             task.result()
-        self._thread_pool.shutdown(wait=True, cancel_futures=False)
 
     def _get_or_create_user_session(self, user: User) -> Tuple[UserSession, bool]:
         """
