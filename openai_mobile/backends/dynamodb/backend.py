@@ -21,7 +21,7 @@ class DynamodbBackend(BaseDataBackend):
 
     def get_latest_user_session(self, user: User) -> Union[UserSession, None]:
         session_obj = self.controller.sessions.get_latest_user_session(
-            user.hashed_user_id
+            user.hashed_user_id, filter_expired=True
         )
         if not session_obj:
             return None

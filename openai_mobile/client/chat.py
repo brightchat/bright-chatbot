@@ -8,6 +8,7 @@ import openai
 
 from openai_mobile.backends.base_backend import BaseDataBackend
 from openai_mobile.client.handlers.chat_handler import ChatReplyHandler
+from openai_mobile.client.handlers.commands_handler import ChatCommandsHandler
 from openai_mobile.client.handlers.image_handler import ImageGenerationHandler
 from openai_mobile.configs.settings import ProjectSettings
 from openai_mobile.models import MessagePrompt, MessageResponse, User, UserSession
@@ -57,15 +58,20 @@ class OpenAIChatClient:
         Generates a response to a message prompt and sends it to the user via the
         communication provider.
         """
+        error = None
         try:
             self._make_reply(prompt)
         except errors.SessionLimitError:
             self._handle_error(prompt, error_msgs.MAX_ACTIVE_SESSIONS_SURPASSED)
         except errors.ModerationError:
             self._handle_error(prompt, error_msgs.MODERATION_ERROR)
-        except Exception:
+        except Exception as e:
             self.logger.exception("Error while generating response")
             self._handle_error(prompt, error_msgs.UNEXPECTED_ERROR)
+            error = e
+        self._wait_for_promises()
+        if error:
+            raise error
 
     def _make_reply(self, prompt: MessagePrompt) -> None:
         """
@@ -82,6 +88,12 @@ class OpenAIChatClient:
         valid_session_prm = self.__thread_pool.submit(
             self._validate_session, user_session
         )
+        if prompt.body.startswith("/"):
+            cmds_handler = ChatCommandsHandler(openai, self)
+            output = cmds_handler.reply(prompt, user_session)
+            if output["message_response"]:
+                # The command handler has already sent the response
+                return
         chat_history = []
         if not sess_created:
             user_session_history_prm = self.__thread_pool.submit(
@@ -115,7 +127,6 @@ class OpenAIChatClient:
             self._exec_async(
                 image_handler.reply, prompt, parsed_answer["image"], user_session
             )
-        self._wait_for_promises()
 
     def send_response(self, message: MessageResponse) -> None:
         """
@@ -140,6 +151,7 @@ class OpenAIChatClient:
         session = self.backend.get_latest_user_session(user)
         created = False
         if not session:
+            self.logger.info("Creating a new session")
             session = self.backend.create_user_session(user)
             created = True
         return session, created
@@ -231,7 +243,13 @@ class OpenAIChatClient:
             )
         )
         if error.status_code < 500:
-            self.backend.end_user_session(prompt.from_user)
+            self.end_user_session(prompt.from_user)
+
+    def end_user_session(self, user: User) -> None:
+        """
+        Asynchronously ends the User's latest session.
+        """
+        self._exec_async(self.backend.end_user_session, user)
 
     def _exec_async(self, f, *args, **kwargs):
         """
