@@ -80,7 +80,8 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
         """
         patterns = [
             r"Image\((.*?)\)",
-            r"Image: (.*?)",
+            r"Image:\s*\(?(.*)\)?",
+            r".*?generating.*?image.*?[\r\n]{2,}(.*)",
         ]
         for pattern in patterns:
             matches = re.findall(pattern, answer, flags=re.IGNORECASE)
