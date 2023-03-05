@@ -31,7 +31,7 @@ class ChatsTableController(BaseTableController):
         message: str,
         timestamp_created: float,
         agent: Literal["assistant", "user"],
-        image_id: str = "",
+        image_id: str = None,
     ) -> Dict[str, Any]:
         """
         Records a new chat message into the table
@@ -46,7 +46,7 @@ class ChatsTableController(BaseTableController):
             "Message": {"S": message},
             "TimestampCreated": {"N": str(timestamp_created)},
             "Agent": {"S": agent.lower()},
-            "ImageId": {"S": image_id},
+            "ImageId": {"S": image_id or ""},
         }
         response = self._put_item(Item=item)
         response["Item"] = item

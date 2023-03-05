@@ -71,18 +71,15 @@ class ImageResponsesTableController(BaseTableController):
     def record_image(
         self,
         prompt: str,
-        timestamp_received: float,
         timestamp_created: float,
         image_uri: str,
-        image_b64: str = None,
         user_id: str = "",
-        message: str = "",
     ) -> Dict[str, Any]:
         """
         Records a new image response into the table.
         Fails if the image already exists in the table.
         """
-        image_id = self.generate_image_id(image_b64 or image_uri)
+        image_id = self.generate_image_id(image_uri)
         item = {
             "ImageId": {
                 "S": image_id,
@@ -93,15 +90,12 @@ class ImageResponsesTableController(BaseTableController):
             "Prompt": {
                 "S": prompt,
             },
-            "Message": {"S": message},
             "ImageURI": {"S": image_uri},
-            "TimestampReceived": {"N": str(timestamp_received)},
             "TimestampCreated": {"N": str(timestamp_created)},
         }
-        response = self._put_item(
+        self._put_item(
             Item=item,
             ExpressionAttributeValues={":image_id": {"S": image_id}},
             ConditionExpression="ImageId <> :image_id",
         )
-        response["Item"] = item
-        return response
+        return item

@@ -29,7 +29,8 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
         response = MessageResponse(
             body=parsed_answer["response_body"], to_user=prompt.from_user
         )
-        self._send_response(response, user_session)
+        self.client.send_response(response)
+        self.client.save_response(response, user_session)
         output = {
             "message_response": response,
             "raw": txt_answer,
@@ -46,6 +47,7 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
         """
         Generates a response to a message prompt using the OpenAI API.
         """
+        print([*chat_history, prompt.to_chat_repr()])
         completion = self.openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[

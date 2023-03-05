@@ -10,6 +10,14 @@ from openai_mobile.backends import DynamodbBackend
 from openai_mobile.client import OpenAIChatClient
 from openai_mobile.models import MessagePrompt, User
 
+try:
+    from aws_xray_sdk.core import patch_all
+
+    patch_all()
+except ImportError:
+    logging.info("Optional library aws_xray_sdk not found. Skipping patching.")
+    pass
+
 
 def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     """
@@ -45,7 +53,9 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
 
 def init_logger():
     logging.basicConfig()
-    logging.getLogger().setLevel(os.environ.get("LAMBDA_LOG_LEVEL", "WARNING"))
+    logging.getLogger("openai_mobile").setLevel(
+        os.environ.get("LAMBDA_LOG_LEVEL", "WARNING")
+    )
 
 
 def verify_request_auth(parsed_body: Dict[str, Any]):

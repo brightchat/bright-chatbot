@@ -78,7 +78,8 @@ class DynamodbBackend(BaseDataBackend):
         chat_history = []
         user = session.user
         for message in user_chat_messages:
-            if message["Agent"] == "user":
+            message_agent = message["Agent"]["S"]
+            if message_agent == "user":
                 chat_history.append(
                     MessagePrompt(
                         body=message["Message"]["S"],
@@ -86,13 +87,13 @@ class DynamodbBackend(BaseDataBackend):
                         from_user=user,
                     )
                 )
-            elif message["Agent"] == "assistant":
+            elif message_agent == "assistant":
                 image_uri = None
                 if message["ImageId"]["S"]:
-                    image_resp = self.controller.images.get_image_from_id(
+                    image_resp = self.controller.image_responses.get_image_from_id(
                         message["ImageId"]["S"]
                     )
-                    image_uri = image_resp["ImageUri"]["S"]
+                    image_uri = image_resp["ImageURI"]["S"]
                 chat_history.append(
                     MessageResponse(
                         body=message["Message"]["S"],
@@ -109,8 +110,8 @@ class DynamodbBackend(BaseDataBackend):
 
     def save_message_prompt(
         self,
-        session: UserSession,
         message: MessagePrompt,
+        session: UserSession,
     ) -> None:
         self.controller.chats.record_chat_message(
             session_id=session.session_id,
@@ -118,19 +119,27 @@ class DynamodbBackend(BaseDataBackend):
             message=message.body,
             timestamp_created=message.sent_at.timestamp(),
             agent="user",
-            image_id=None,
         )
 
     def save_message_response(
         self,
-        session: UserSession,
         message: MessageResponse,
+        session: UserSession,
     ) -> None:
+        image_id = None
+        if message.media_url:
+            image_obj = self.controller.image_responses.record_image(
+                prompt=message.body,
+                timestamp_created=message.created_at.timestamp(),
+                image_uri=message.media_url,
+                user_id=session.user.hashed_user_id,
+            )
+            image_id = image_obj["ImageId"]["S"]
         self.controller.chats.record_chat_message(
             session_id=session.session_id,
             user_id=session.user.hashed_user_id,
             message=message.body,
             timestamp_created=message.created_at.timestamp(),
             agent="assistant",
-            image_id=message.media_url,
+            image_id=image_id,
         )

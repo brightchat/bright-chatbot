@@ -1,8 +1,15 @@
 # OpenAI (ChatGPT) Mobile Chatbot
 
-Application that uses the OpenAI API to carry out a conversation with the OpenAI's incredible language model [ChatGPT](https://openai.com/blog/chatgpt) right from your phone, supports sending messages to WhatApp or SMS by using the Twilio Provider.
+Python package that uses the OpenAI API to carry out a conversation with OpenAI's incredible language models right from your phone, using WhatApp or SMS (By leveraging the Twilio Provider).
 
-The application also supports generating images using OpenAI's [Dall-E](https://openai.com/blog/dall-e/) model.
+**Features:**
+
+- Strike a conversation with an AI assistant, OpenAI's [ChatGPT](https://openai.com/blog/chatgpt)
+- Generate an Image never seen before with OpenAI's [Dall-E](https://openai.com/blog/dall-e/) model
+
+**Coming Soon!**
+
+- Transcribe voice messages to text right from your mobile chat application.
 
 ![Image of ChatGPT Mobile Chatbot](docs/images/whatsapp-img-example.jpeg?raw=true "ChatGPT Mobile Chatbot")
 
@@ -10,15 +17,15 @@ The application also supports generating images using OpenAI's [Dall-E](https://
 
 ### Supported Comms Providers
 
-- [Twillio](https://www.twilio.com/)
+- [Twillio](https://www.twilio.com/).
     The implemented Twilio Provider allows you to communicate with ChatGPT and generate images with Dall-E by using WhatsApp, or SMS.
 
 ### Supported Data Backends
 
-- [AWS DynamoDB](https://aws.amazon.com/dynamodb/)
+- [AWS DynamoDB](https://aws.amazon.com/dynamodb/).
     See the [DynamoDB backend documentation](openai_mobile/backends/dynamodb/backend.py) to see
     how to setup the DynamoDB tables.
-- [PostgreSQL](https://www.postgresql.org/) (Coming Soon)
+- [PostgreSQL](https://www.postgresql.org/). (Coming Soon)
 
 ## Setup
 
@@ -83,10 +90,10 @@ that can be used as the Callback URL of your Twilio messaging service.
 ### Local setup with the Python Client
 
 You can use the `OpenAIChatClient` class to have ChatGPT send messages to an user in response to a request coming
-from a supported provider.
+to your own application.
 
 The following example shows how to use the `OpenAIChatClient` with the `TwilioProvider` and the `DynamodbBackend` to
-respond to a request coming from Twilio. The implemented Twilio Provider can also validate the requests coming from Twilio by checking the signature of the request.
+respond to a request coming from Twilio. The class `TwilioProvider` can validate the requests coming from Twilio by checking the signature of the request.
 
 > If you use the Twilio Provider, see the [Twilio Documentation](https://www.twilio.com/docs/messaging/twiml#twilios-request-to-your-application)
 > for details on how to setup the Callback URL and check how the requests are sent to your application.

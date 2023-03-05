@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from typing import Any, Dict, List, Tuple, Type, Union
@@ -22,14 +24,15 @@ class OpenAIChatClient:
         provider: Type[BaseProvider],
         n_threads: int = 5,
     ):
+        openai.api_key = ProjectSettings.OPENAI_API_KEY
         self._logger = logging.getLogger(f"{__package__}.{self.__class__.__name__}")
         self._backend = backend
         self._provider = provider
         self._responses_generated = []
-        self._thread_pool = ThreadPoolExecutor(
+        self.__promises_queue = []
+        self.__thread_pool = ThreadPoolExecutor(
             max_workers=n_threads if ProjectSettings.USE_MULTI_THREADING else 1
         )
-        openai.api_key = ProjectSettings.OPENAI_API_KEY
 
     @property
     def logger(self) -> logging.Logger:
@@ -72,17 +75,17 @@ class OpenAIChatClient:
         The message prompt is saved to the backend and the response is also saved,
         preserving the conversation history for the current session.
         """
-        moderation_prm = self._thread_pool.submit(
+        moderation_prm = self.__thread_pool.submit(
             self._check_message_moderation, prompt.body
         )
         user_session, sess_created = self._get_or_create_user_session(prompt.from_user)
-        valid_session_prm = self._thread_pool.submit(
+        valid_session_prm = self.__thread_pool.submit(
             self._validate_session, user_session
         )
         chat_history = []
         if not sess_created:
-            user_session_history_prm = self._thread_pool.submit(
-                self._get_session_chat_history, prompt.from_user, user_session
+            user_session_history_prm = self.__thread_pool.submit(
+                self._get_session_chat_history, prompt, user_session
             )
         # Check if the message is moderate:
         is_flagged = moderation_prm.result()
@@ -98,34 +101,36 @@ class OpenAIChatClient:
         if not sess_created:
             chat_history = user_session_history_prm.result()
         # Save the message prompt to the backend:
-        self._thread_pool.submit(self.backend.save_message_prompt, prompt, user_session)
+        self._exec_async(self.backend.save_message_prompt, prompt, user_session)
         # Generate response from the prompt:
-        chat_handler = ChatReplyHandler(
-            openai_lib=openai,
-            thread_pool=self._thread_pool,
-            backend=self.backend,
-            provider=self.provider,
-        )
+        chat_handler = ChatReplyHandler(openai_lib=openai, client=self)
         handler_response = chat_handler.reply(
             prompt=prompt, chat_history=chat_history, user_session=user_session
         )
         parsed_answer = handler_response["parsed"]
-        extra_tasks = []
         # Check if message requests for image generation
         if parsed_answer["image"]:
-            image_handler = ImageGenerationHandler(
-                openai_lib=openai,
-                thread_pool=self._thread_pool,
-                backend=self.backend,
-                provider=self.provider,
-            )
+            image_handler = ImageGenerationHandler(openai_lib=openai, client=self)
             # Reply with the image asynchronously
-            img_prm = self._thread_pool.submit(
+            self._exec_async(
                 image_handler.reply, prompt, parsed_answer["image"], user_session
             )
-            extra_tasks.append(img_prm)
-        for task in extra_tasks:
-            task.result()
+        self._wait_for_promises()
+
+    def send_response(self, message: MessageResponse) -> None:
+        """
+        Sends a message to the user via the communication provider assynchronously.
+        """
+        self._responses_generated.append(message)
+        self._exec_async(self.provider.send_message, message)
+
+    def save_response(
+        self, message: MessageResponse, user_session: UserSession
+    ) -> None:
+        """
+        Saves a message response to the backend asynchronously.
+        """
+        self._exec_async(self.backend.save_message_response, message, user_session)
 
     def _get_or_create_user_session(self, user: User) -> Tuple[UserSession, bool]:
         """
@@ -163,10 +168,10 @@ class OpenAIChatClient:
         If the session is valid, returns None, otherwise returns
         an ApplicationError object.
         """
-        sess_cnt_prm = self._thread_pool.submit(
+        sess_cnt_prm = self.__thread_pool.submit(
             self.backend.get_count_of_active_sessions
         )
-        sess_msgs_cnt_prm = self._thread_pool.submit(
+        sess_msgs_cnt_prm = self.__thread_pool.submit(
             self.backend.get_count_of_session_prompts, session
         )
         if sess_cnt_prm.result() > ProjectSettings.MAX_ACTIVE_SESSIONS:
@@ -194,16 +199,20 @@ class OpenAIChatClient:
             )
         return flagged
 
-    def _send_response(self, message: MessageResponse) -> None:
+    def _wait_for_promises(self) -> None:
         """
-        Sends a message to the user via the communication provider
-        and saves it to the backend.
-
-        Both operations are performed asynchronously.
+        Waits for all the asynchronous tasks to complete and
+        removes them from the queue of promises.
         """
-        self._responses_generated.append(message)
-        self._thread_pool.submit(self.provider.send_message, message)
-        self._thread_pool.submit(self.backend.save_message_response, message)
+        errors = []
+        while self.__promises_queue:
+            promise = self.__promises_queue.pop(0)
+            try:
+                promise.result()
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            raise errors[0]
 
     def _handle_error(self, prompt: MessagePrompt, error: ApplicationError) -> None:
         """
@@ -214,7 +223,7 @@ class OpenAIChatClient:
             self.logger.error(
                 f"An error '{ApplicationError}' occurred while generating a response for the message: '{MessagePrompt}'"
             )
-        self._send_response(
+        self.send_response(
             MessageResponse(
                 body=error.message,
                 to_user=prompt.from_user,
@@ -223,3 +232,10 @@ class OpenAIChatClient:
         )
         if error.status_code < 500:
             self.backend.end_user_session(prompt.from_user)
+
+    def _exec_async(self, f, *args, **kwargs):
+        """
+        Asynchronously executes a function by adding it to the thread pool.
+        """
+        promise = self.__thread_pool.submit(f, *args, **kwargs)
+        self.__promises_queue.append(promise)

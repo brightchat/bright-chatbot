@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import abc
-from concurrent.futures import ThreadPoolExecutor
 import logging
 from typing import Type
 
 import openai
 
+from openai_mobile import client
 from openai_mobile.backends.base_backend import BaseDataBackend
-from openai_mobile.models import MessagePrompt, MessageResponse, UserSession
+from openai_mobile.models import MessagePrompt
 from openai_mobile.providers.base_provider import BaseProvider
 
 
@@ -23,20 +25,19 @@ class OpenAITaskBaseHandler(abc.ABC):
     def __init__(
         self,
         openai_lib: openai,
-        thread_pool: "ThreadPoolExecutor",
-        backend: Type["BaseDataBackend"],
-        provider: Type["BaseProvider"],
+        client: client.OpenAIChatClient,
     ):
-        self._thread_pool = thread_pool
-        self._backend = backend
-        self._provider = provider
-        self._responses_generated = []
+        self._client = client
         self._openai_lib = openai_lib
         self._logger = logging.getLogger(f"{__package__}.{self.__class__.__name__}")
 
     @property
     def openai(self) -> openai:
         return self._openai_lib
+
+    @property
+    def client(self):
+        return self._client
 
     @property
     def logger(self) -> logging.Logger:
@@ -55,27 +56,11 @@ class OpenAITaskBaseHandler(abc.ABC):
         """
         Backend object used to store and retrieve data of the chat.
         """
-        return self._backend
+        return self._client.backend
 
     @property
     def provider(self) -> Type["BaseProvider"]:
         """
         Communication provider used to send messages.
         """
-        return self._provider
-
-    def _send_response(
-        self, message: MessageResponse, user_session: UserSession
-    ) -> None:
-        """
-        Sends a message to the user via the communication provider
-        and saves it to the backend.
-
-        Both operations are performed asynchronously.
-        """
-        print("Sending message response: ", message)
-        self._responses_generated.append(message)
-        self._thread_pool.submit(self.provider.send_message, message)
-        self._thread_pool.submit(
-            self.backend.save_message_response, message, user_session
-        )
+        return self._client.provider

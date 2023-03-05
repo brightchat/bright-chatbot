@@ -1,2 +1,1 @@
 ../../[twilio-provider]
-aws-xray-sdk==2.11.0

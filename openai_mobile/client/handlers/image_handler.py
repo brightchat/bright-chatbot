@@ -25,7 +25,8 @@ class ImageGenerationHandler(OpenAITaskBaseHandler):
         response = MessageResponse(
             body=parsed_img_prompt, media_url=image_url, to_user=prompt.from_user
         )
-        self._send_response(response, user_session)
+        self.client.send_response(response)
+        self.client.save_response(response, user_session)
         output = {
             "message_response": response,
             "raw": image_url,
