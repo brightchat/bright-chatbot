@@ -27,6 +27,20 @@ Python package that uses the OpenAI API to carry out a conversation with OpenAI'
     how to setup the DynamoDB tables.
 - [PostgreSQL](https://www.postgresql.org/). (Coming Soon)
 
+## Quick Deployment
+
+### Deploy to your Cloud Infrastructure in AWS
+
+There is a handy CloudFormation script that you can use to easily deploy the Application on your own AWS account
+with just a few commands. The deployed application will be ready to use with the Twilio Provider and the DynamoDB backend.
+It will also be highly scalable and fault tolerant by using AWS' family of serverless resources.
+
+The cloudformation stack handles the creation of the DynamoDB tables,
+the creation of the Lambda functions, and an API Gateway endpoint
+that can be used as the Callback URL of your Twilio messaging service.
+
+**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application.**
+
 ## Setup
 
 Requirements:
@@ -73,21 +87,9 @@ Variable Name | Description
 > AWS credentials can also be set using the `~/.aws/credentials` file when the AWS CLI is installed or ignored when taking advantage of an [IAM Role for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) feature.
 > See [AWS Credentials Documentation](https://docs.aws.amazon.com/general/latest/gr/aws-security-credentials.html) for more details.
 
-## Deployment
+## Usage
 
-### Deploy to your Cloud Infrastructure in AWS
-
-There is a handy CloudFormation script that you can use to easily deploy the Application on your own AWS account
-with just a few commands. The deployed application will be ready to use with the Twilio Provider and the DynamoDB backend.
-It will also be highly scalable and fault tolerant by using AWS' family of serverless resources.
-
-The cloudformation stack handles the creation of the DynamoDB tables,
-the creation of the Lambda functions, and an API Gateway endpoint
-that can be used as the Callback URL of your Twilio messaging service.
-
-**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application.**
-
-### Local setup with the Python Client
+### Use locally with the Python Client
 
 You can use the `OpenAIChatClient` class to have ChatGPT send messages to an user in response to a request coming
 to your own application.
