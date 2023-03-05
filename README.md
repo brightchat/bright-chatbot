@@ -32,14 +32,14 @@ Python package that uses the OpenAI API to carry out a conversation with OpenAI'
 ### Deploy to your Cloud Infrastructure in AWS
 
 There is a handy CloudFormation script that you can use to easily deploy the Application on your own AWS account
-with just a few commands. The deployed application will be ready to use with the Twilio Provider and the DynamoDB backend.
-It will also be highly scalable and fault tolerant by using AWS' family of serverless resources.
+with just a few commands.
 
-The cloudformation stack handles the creation of the DynamoDB tables,
-the creation of the Lambda functions, and an API Gateway endpoint
-that can be used as the Callback URL of your Twilio messaging service.
+The deployed application will be ready to use with the Twilio Provider and the DynamoDB backend and be highly scalable and fault tolerant by using AWS' family of serverless resources.
 
-**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application.**
+**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application with the CloudFormation stack.**
+
+The CloudFormation stack handles the creation of the DynamoDB tables, Lambda function,
+and an API Gateway endpoint that can be used as the Callback URL of your Twilio messaging service.
 
 ## Setup
 
