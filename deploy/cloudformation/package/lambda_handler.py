@@ -15,7 +15,7 @@ try:
 
     patch_all()
 except ImportError:
-    logging.info("Optional library aws_xray_sdk not found. Skipping patching.")
+    logging.warn("Optional library aws_xray_sdk not found. Skipping patching.")
     pass
 
 
