@@ -3,6 +3,7 @@ from os import environ
 from typing import Type
 
 from openai_mobile.utils.exceptions import ImproperlyConfigured
+from openai_mobile.utils.functional import classproperty
 
 
 class BaseSettings(abc.ABC):

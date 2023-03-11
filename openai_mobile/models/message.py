@@ -13,13 +13,22 @@ class MessagePrompt(BaseModel):
 
     body: str
     from_user: User
-    sent_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
+    def to_text_repr(self) -> str:
+        """
+        Returns a string representation of the content of the message.
+        """
+        return self.body
 
     def to_chat_repr(self) -> Dict[str, str]:
         """
         Returns a string representation of the message that can be used for chat completions
         """
-        return {"role": "user", "content": self.body}
+        return {
+            "role": "user",
+            "content": f"{self.created_at.isoformat()}: {self.to_text_repr()}",
+        }
 
 
 class MessageResponse(BaseModel):
@@ -63,10 +72,9 @@ class MessageResponse(BaseModel):
         """
         Returns a string representation of the content of the message.
         """
-        if self.body:
-            return self.body
         if self.media_url:
-            return f"[Media URI: {self.media_url}]"
+            return f"Image({self.body})"
+        return self.body
 
     def to_chat_repr(self) -> Dict[str, str]:
         """

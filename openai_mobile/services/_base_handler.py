@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Type
+from typing import Type, Any
 
 import openai
 
 from openai_mobile import client
-from openai_mobile.backends.base_backend import BaseDataBackend
-from openai_mobile.models import MessagePrompt
-from openai_mobile.providers.base_provider import BaseProvider
+from openai_mobile import models
 
 
 class OpenAITaskBaseHandler(abc.ABC):
@@ -44,7 +42,12 @@ class OpenAITaskBaseHandler(abc.ABC):
         return self._logger
 
     @abc.abstractmethod
-    def reply(self, prompt: MessagePrompt, *args, **kwargs) -> None:
+    def reply(
+        self,
+        prompt: models.MessagePrompt,
+        user_session: models.UserSession,
+        **kwargs: Any,
+    ) -> models.HandlerOutput:
         """
         Generates a response to a message prompt and sends it to the user via the
         communication provider.
@@ -52,14 +55,14 @@ class OpenAITaskBaseHandler(abc.ABC):
         raise NotImplementedError
 
     @property
-    def backend(self) -> Type["BaseDataBackend"]:
+    def backend(self):
         """
         Backend object used to store and retrieve data of the chat.
         """
         return self._client.backend
 
     @property
-    def provider(self) -> Type["BaseProvider"]:
+    def provider(self):
         """
         Communication provider used to send messages.
         """
