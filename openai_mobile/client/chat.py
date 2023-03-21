@@ -26,7 +26,6 @@ class OpenAIChatClient:
         self._logger = logging.getLogger(f"{__package__}.{self.__class__.__name__}")
         self._backend = backend
         self._provider = provider
-        self.__chat_history = []
         self.__prompts_received = []
         self._responses_generated = []
         self.__futures_queue = []
@@ -164,23 +163,6 @@ class OpenAIChatClient:
         """
         self._exec_async(self.backend.end_user_session, user)
 
-    def get_session_chat_history(
-        self, prompt: models.MessagePrompt, session: models.UserSession
-    ) -> List[Dict[str, str]]:
-        """
-        Returns the chat history of the current session and the
-        session object itself.
-        """
-        chat_history = self.backend.get_session_chat_history(session)
-        return [
-            msg.to_chat_repr()
-            for msg in chat_history
-            if not (
-                type(msg) == models.MessagePrompt
-                and msg.created_at == prompt.created_at
-            )
-        ]
-
     def validate_session(
         self, session: models.UserSession
     ) -> Union[Type[models.ApplicationError], None]:
@@ -221,22 +203,6 @@ class OpenAIChatClient:
                 f"OpenAI's moderation model detected flagged content with response:\n{response}"
             )
         return flagged
-
-    def get_chat_history(
-        self,
-    ) -> List[Union[models.MessagePrompt, models.MessageResponse]]:
-        """
-        Returns the message history of the current session
-        from the storage backend.
-        """
-        if self.__chat_history:
-            return self.__chat_history
-
-    def clear_chat_history(self):
-        """
-        Clears the chat history of the current session.
-        """
-        self.__chat_history = []
 
     def _wait_for_promises(self) -> None:
         """

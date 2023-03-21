@@ -78,7 +78,7 @@ class DynamodbBackend(BaseDataBackend):
         chat_history = []
         user = session.user
         for message in user_chat_messages:
-            message_agent = message["Agent"]["S"]
+            message_agent = message["ChatAgent"]["S"]
             if message_agent == "user":
                 chat_history.append(
                     MessagePrompt(
@@ -98,7 +98,7 @@ class DynamodbBackend(BaseDataBackend):
                 )
             else:
                 raise ValueError(
-                    "Invalid agent type. Got: '{}'".format(message["Agent"])
+                    "Invalid agent type. Got: '{}'".format(message["ChatAgent"])
                 )
         return chat_history
 

@@ -66,7 +66,7 @@ def verify_request_auth(parsed_body: Dict[str, Any]):
     params = parsed_body["params"]
     headers = parsed_body["headers"]
     signature = headers["X-Twilio-Signature"].replace(" ", "+")
-    TwilioProvider.verify_signature(
+    TwilioProvider().verify_signature(
         callback_url, params, signature, raise_on_failure=True
     )
 

@@ -45,7 +45,7 @@ class ChatsTableController(BaseTableController):
             },
             "Message": {"S": message},
             "TimestampCreated": {"N": str(timestamp_created)},
-            "Agent": {"S": agent.lower()},
+            "ChatAgent": {"S": agent.lower()},
             "ImageId": {"S": image_id or ""},
         }
         response = self._put_item(Item=item)

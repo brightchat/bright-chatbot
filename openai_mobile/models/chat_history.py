@@ -37,8 +37,8 @@ class ChatHistory(BaseModel):
                 "content": sess_status_prompt,
             },
         ]
-        system_prompt_counter = 3
-        system_prompt_seq_repetition = 3
+        system_prompt_counter = 10
+        system_prompt_seq_repetition = 10
         for message in self.messages:
             system_prompt_counter -= 1
             if system_prompt_counter <= 0:
