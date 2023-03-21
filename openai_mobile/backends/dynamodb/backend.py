@@ -12,8 +12,8 @@ class DynamodbBackend(BaseDataBackend):
     Backend that uses DynamoDB to store and retrieve data.
     """
 
-    def __init__(self):
-        self._controller = DynamoTablesController()
+    def __init__(self, **client_kwargs):
+        self._controller = DynamoTablesController(**client_kwargs)
 
     @property
     def controller(self) -> DynamoTablesController:
@@ -78,33 +78,27 @@ class DynamodbBackend(BaseDataBackend):
         chat_history = []
         user = session.user
         for message in user_chat_messages:
-            message_agent = message["Agent"]["S"]
+            message_agent = message["ChatAgent"]["S"]
             if message_agent == "user":
                 chat_history.append(
                     MessagePrompt(
                         body=message["Message"]["S"],
-                        sent_at=message["TimestampCreated"]["N"],
+                        created_at=message["TimestampCreated"]["N"],
                         from_user=user,
                     )
                 )
             elif message_agent == "assistant":
-                image_uri = None
-                if message["ImageId"]["S"]:
-                    image_resp = self.controller.image_responses.get_image_from_id(
-                        message["ImageId"]["S"]
-                    )
-                    image_uri = image_resp["ImageURI"]["S"]
                 chat_history.append(
                     MessageResponse(
                         body=message["Message"]["S"],
                         created_at=message["TimestampCreated"]["N"],
                         to_user=user,
-                        media_url=image_uri,
+                        media_url=message["ImageId"]["S"],
                     )
                 )
             else:
                 raise ValueError(
-                    "Invalid agent type. Got: '{}'".format(message["Agent"])
+                    "Invalid agent type. Got: '{}'".format(message["ChatAgent"])
                 )
         return chat_history
 
@@ -117,7 +111,7 @@ class DynamodbBackend(BaseDataBackend):
             session_id=session.session_id,
             user_id=session.user.hashed_user_id,
             message=message.body,
-            timestamp_created=message.sent_at.timestamp(),
+            timestamp_created=message.created_at.timestamp(),
             agent="user",
         )
 

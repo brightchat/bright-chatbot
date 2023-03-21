@@ -1,31 +1,57 @@
-from typing import Dict
+from typing import Dict, List
 
 from twilio.rest import Client
 from twilio.request_validator import RequestValidator
 
 from openai_mobile.providers.base_provider import BaseProvider
 from openai_mobile.configs.settings import ProjectSettings
-from openai_mobile.models import MessageResponse
+from openai_mobile import models
 from openai_mobile.utils.exceptions import ValidationError
-from openai_mobile.utils.functional import classproperty
 
 
 class TwilioProvider(BaseProvider):
-    def __init__(self):
-        self._client = Client(self.account_sid, self.auth_token)
+    MSG_LENGTH_LIMIT = 1600
+
+    def __init__(self, **twilio_client_kwargs):
+        self._client = Client(**twilio_client_kwargs)
 
     @property
-    def client(self):
+    def client(self) -> Client:
         """
         Returns the object instance of the Twilio client.
         """
         return self._client
 
-    def send_message(self, message: MessageResponse):
-        parsed_msg = self._parse_message(message)
-        self.client.messages.create(**parsed_msg)
+    def send_message(self, message: models.MessageResponse):
+        for msg in self._split_message(message):
+            parsed_msg = self._parse_message(msg)
+            self.client.messages.create(**parsed_msg)
 
-    def _parse_message(self, message: MessageResponse) -> Dict[str, str]:
+    def _split_message(
+        self, message: models.MessageResponse
+    ) -> List[models.MessageResponse]:
+        """
+        Splits a message into multiple messages if it's too long.
+        Attempts to split the message at the last line break before the limit.
+        """
+        if len(message.body) <= self.MSG_LENGTH_LIMIT:
+            return [message]
+        messages = []
+        while len(message.body) > self.MSG_LENGTH_LIMIT:
+            split_index = message.body.rfind("\n", 0, self.MSG_LENGTH_LIMIT)
+            if split_index == -1:
+                split_index = self.MSG_LENGTH_LIMIT
+            messages.append(
+                models.MessageResponse(
+                    body=message.body[:split_index],
+                    **message.dict(exclude={"body"}),
+                )
+            )
+            message.body = message.body[split_index:]
+        messages.append(message)
+        return messages
+
+    def _parse_message(self, message: models.MessageResponse) -> Dict[str, str]:
         """
         Parses a message into a dictionary that can be sent to the Twilio Client.
         """
@@ -36,9 +62,8 @@ class TwilioProvider(BaseProvider):
             "to": message.to_user.user_id,
         }
 
-    @classmethod
     def verify_signature(
-        cls,
+        self,
         callback_url: str,
         request_params: Dict[str, str],
         signature: str,
@@ -48,15 +73,15 @@ class TwilioProvider(BaseProvider):
         Verifies that an HTTP request is actually coming from Twillio by validating
         the signature of the request.
         """
-        validator = RequestValidator(cls.auth_token)
+        validator = RequestValidator(self._auth_token)
         validated = validator.validate(callback_url, request_params, signature)
         if not validated and raise_on_failure:
             raise ValidationError("Twillio request signature couldn't be verified")
 
-    @classproperty
-    def account_sid(cls) -> str:
-        return ProjectSettings.TWILIO_ACCOUNT_SID
+    @property
+    def _account_sid(self) -> str:
+        return self.client.auth[0]
 
-    @classproperty
-    def auth_token(cls) -> str:
-        return ProjectSettings.TWILIO_AUTH_TOKEN
+    @property
+    def _auth_token(self) -> str:
+        return self.client.auth[1]

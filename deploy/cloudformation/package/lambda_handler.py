@@ -5,9 +5,9 @@ import re
 from typing import Dict, Any
 from urllib.parse import parse_qs
 
-from openai_mobile.providers import TwilioProvider
-from openai_mobile.backends import DynamodbBackend
 from openai_mobile.client import OpenAIChatClient
+from openai_mobile.providers.twilio import TwilioProvider
+from openai_mobile.backends import DynamodbBackend
 from openai_mobile.models import MessagePrompt, User
 
 try:
@@ -66,7 +66,7 @@ def verify_request_auth(parsed_body: Dict[str, Any]):
     params = parsed_body["params"]
     headers = parsed_body["headers"]
     signature = headers["X-Twilio-Signature"].replace(" ", "+")
-    TwilioProvider.verify_signature(
+    TwilioProvider().verify_signature(
         callback_url, params, signature, raise_on_failure=True
     )
 

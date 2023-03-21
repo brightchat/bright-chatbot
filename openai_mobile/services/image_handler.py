@@ -1,8 +1,8 @@
-from typing import Any, Dict, List, Literal
+from typing import Literal
 
-from openai_mobile.client.handler import OpenAITaskBaseHandler
+from openai_mobile.services._base_handler import OpenAITaskBaseHandler
 from openai_mobile.configs.settings import ProjectSettings
-from openai_mobile.models import MessagePrompt, MessageResponse, UserSession
+from openai_mobile import models
 
 
 class ImageGenerationHandler(OpenAITaskBaseHandler):
@@ -12,30 +12,29 @@ class ImageGenerationHandler(OpenAITaskBaseHandler):
 
     def reply(
         self,
-        prompt: MessagePrompt,
-        parsed_img_prompt: str,
-        user_session: UserSession,
-    ) -> None:
+        prompt: models.MessagePrompt,
+        user_session: models.UserSession,
+        image_prompt: str,
+    ) -> models.HandlerOutput:
         """
         Generates a response to a message prompt and sends it to the user via the
         communication provider.
         """
         self.logger.info(f"Generating an image from user prompt: '{prompt}'")
-        image_url = self._generate_image(parsed_img_prompt, prompt)
-        response = MessageResponse(
-            body=parsed_img_prompt, media_url=image_url, to_user=prompt.from_user
+        image_url = self._generate_image(image_prompt, prompt)
+        response = models.MessageResponse(
+            body=image_prompt, media_url=image_url, to_user=prompt.from_user
         )
         self.client.send_response(response)
         self.client.save_response(response, user_session)
-        output = {
-            "message_response": response,
-            "raw": image_url,
-            "parsed": {},
-        }
+        output = models.HandlerOutput(
+            message_prompt=prompt,
+            message_response=response,
+        )
         self.logger.info(f"Image generated with output: '{output}'")
         return output
 
-    def _generate_image(self, img_prompt: str, prompt: MessagePrompt) -> str:
+    def _generate_image(self, img_prompt: str, prompt: models.MessagePrompt) -> str:
         """
         Generates an image using the OpenAI Image Generation Model (Dall-E)
         """

@@ -2,6 +2,7 @@ from typing import List, Literal
 
 from openai_mobile.configs.base import BaseSettings
 from openai_mobile.utils.functional import classproperty
+from openai_mobile.configs.templates import prompts
 
 
 class ProjectSettings(BaseSettings):
@@ -132,20 +133,6 @@ class ProjectSettings(BaseSettings):
         return cls.get("TWILIO_PHONE_NUMBER", accept_plain_name=True)
 
     @classproperty
-    def TWILIO_ACCOUNT_SID(cls) -> str:
-        """
-        Account SID of the Twilio account used to send messages.
-        """
-        return cls.get("TWILIO_ACCOUNT_SID", accept_plain_name=True)
-
-    @classproperty
-    def TWILIO_AUTH_TOKEN(cls) -> str:
-        """
-        Auth token of the Twilio account used to send messages.
-        """
-        return cls.get("TWILIO_AUTH_TOKEN", accept_plain_name=True)
-
-    @classproperty
     def TWILIO_CALLBACK_URL(cls) -> str:
         """
         URL of the Twilio callback endpoint.
@@ -153,3 +140,25 @@ class ProjectSettings(BaseSettings):
         This can be used to verify the signature of a received message.
         """
         return cls.get("TWILIO_CALLBACK_URL", accept_plain_name=True)
+
+    # === Message Templates ===
+    @classproperty
+    def CHAT_SYSTEM_ROLE_PROMPT(cls) -> str:
+        """
+        Message template used as the prompt for the chat system role.
+        """
+        role_prompt = cls.get("CHAT_SYSTEM_ROLE_PROMPT")
+        if not role_prompt:
+            role_prompt = prompts.CHAT_SYSTEM_ROLE_PROMPT
+        return role_prompt
+
+    @classproperty
+    def SESSION_STATUS_PROMPT(cls) -> str:
+        """
+        Message template used as the prompt for the session status
+        when the session starts
+        """
+        session_status_prompt = cls.get("SESSION_STATUS_PROMPT")
+        if not session_status_prompt:
+            session_status_prompt = prompts.SESSION_STATUS_PROMPT
+        return session_status_prompt

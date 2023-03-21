@@ -30,7 +30,7 @@ Logs the messages and responses sent in a chat during a session.
 | UserId | Identifier of the **User** associated with the chat | Text (Hashed phone number) | No | No
 | Message | Message sent in the chat during the respective session | Text (Max 500 chars) | No | No
 | TimestampCreated | UNIX Timestamp for when the message was created by either the bot or the user | Numeric | No | Yes
-| Agent | Agent that sent the message. Can be either `assistant` (Our bot) or `user` | Text (Enum) | No | No
+| ChatAgent | Agent that sent the message. Can be either `assistant` (Our bot) or `user` | Text (Enum) | No | No
 | ImageId | When response contains an image, unique identifier of the image in the `ImageResponses` table | Text (SHA256 from `image_b64`) | No | No
 
 > Global seconday index "UserIdGlobalIndex" on: `(UserId (PK), TimestampCreated (SK))`.

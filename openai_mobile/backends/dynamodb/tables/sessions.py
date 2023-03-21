@@ -19,8 +19,8 @@ class SessionsTableController(BaseTableController):
         return f"{user_id}:{str(timestamp)}"
 
     @property
-    def session_expiration_hours(self) -> int:
-        return ProjectSettings.MAX_SESSION_DURATION_MINUTES * 60
+    def session_expiration_hours(self) -> float:
+        return ProjectSettings.MAX_SESSION_DURATION_MINUTES / 60
 
     def get_user_sessions(
         self,

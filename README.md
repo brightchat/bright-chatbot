@@ -15,7 +15,7 @@ Python package that uses the OpenAI API to carry out a conversation with OpenAI'
 
 ## Supported Configurations
 
-### Supported Comms Providers
+### Supported Chat Providers
 
 - [Twillio](https://www.twilio.com/).
     The implemented Twilio Provider allows you to communicate with ChatGPT and generate images with Dall-E by using WhatsApp, or SMS.
@@ -66,7 +66,7 @@ Variable Name | Description
 `OPENAI_API_KEY` | API Key for the OpenAI API. You can get one from [here](https://platform.openai.com/docs/api-reference/authentication)
 `OPENAI_MOBILE_SECRET_KEY` | Secret key used to cryptographically sign sensitive data. You can generate one using the command: `openssl rand -hex 32`
 
-If you are using the Twilio Provider, you'll also need to set the following variables to authenticate with the Twilio API:
+If you are using the Twilio Provider, you can set the following variables to authenticate automatically with the Twilio API instead of manually providing the credentials when creating the `TwilioProvider` instance:
 
 Variable Name | Description
 --- | ---
@@ -76,7 +76,7 @@ Variable Name | Description
 
 > See [Twilio Rest API Credentials Documentation](https://www.twilio.com/docs/iam/credentials/api) for more details.
 
-If you use the DynamoDB backend, you'll also need to set the following variables to authenticate with the AWS API:
+If you use the DynamoDB backend, you can to set the following variables to authenticate with the AWS API:
 
 Variable Name | Description
 --- | ---
@@ -84,15 +84,14 @@ Variable Name | Description
 `AWS_SECRET_ACCESS_KEY` | AWS Secret Access Key used to communicate with the AWS API
 `AWS_DEFAULT_REGION` | AWS Region where the DynamoDB tables are located
 
-> AWS credentials can also be set using the `~/.aws/credentials` file when the AWS CLI is installed or ignored when taking advantage of an [IAM Role for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) feature.
+> AWS credentials can also be set using the `~/.aws/credentials` file when the AWS CLI is installed, or if you run the application in an AWS environment you can use an [IAM Role](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) to authenticate with the AWS API.
 > See [AWS Credentials Documentation](https://docs.aws.amazon.com/general/latest/gr/aws-security-credentials.html) for more details.
 
 ## Usage
 
 ### Use locally with the Python Client
 
-You can use the `OpenAIChatClient` class to have ChatGPT send messages to an user in response to a request coming
-to your own application.
+You can use the `OpenAIChatClient` class to have ChatGPT send messages to an user in response to a request coming to your application.
 
 The following example shows how to use the `OpenAIChatClient` with the `TwilioProvider` and the `DynamodbBackend` to
 respond to a request coming from Twilio. The class `TwilioProvider` can validate the requests coming from Twilio by checking the signature of the request.
@@ -115,25 +114,24 @@ headers = request["headers"]
 signature  = headers["X-Twilio-Signature"]
 callback_url = f"{request['scheme']}://{request['Host']}{request['path']}"
 
+provider = TwilioProvider()
+
 # Verify that the request is actually coming from Twilio:
-TwilioProvider.verify_signature(
+provider.verify_signature(
     callback_url=callback_url,
     request_params=params,
     signature=signature,
     raise_on_failure=True
 )
-
+# Create the prompt from the request:
+prompt = MessagePrompt(
+    body=request["body"],
+    from_user=User(user_id=request["from"])
+)
 # Create the client and reply to the user:
 client = OpenAIChatClient(
     backend=DynamodbBackend(),
-    provider=TwilioProvider(),
-)
-user = User(
-    user_id=request["from"]
-)
-prompt = MessagePrompt(
-    body=request["body"],
-    from_user=user
+    provider=provider,
 )
 client.reply(prompt)
 ```
