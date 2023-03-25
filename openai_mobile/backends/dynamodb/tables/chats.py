@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List, Literal
 
 from openai_mobile.backends.dynamodb.tables.base import BaseTableController
@@ -52,18 +53,39 @@ class ChatsTableController(BaseTableController):
         response["Item"] = item
         return response
 
-    def get_user_chat_messages(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_chat_messages(
+        self, user_id: str, from_date: datetime = None, to_date: datetime = None
+    ) -> List[Dict[str, Any]]:
         """
-        Retrieves all the messages of the user given
+        Retrieves all the messages of the user given,
+        optionally filtered by two dates.
         """
-        response = self._query(
+        kwargs = dict(
+            KeyConditionExpression="UserId = :user_id",
             ExpressionAttributeValues={
                 ":user_id": {
                     "S": user_id,
                 },
             },
+        )
+        if from_date or to_date:
+            if not from_date:
+                from_date = datetime.fromtimestamp(0)
+            if not to_date:
+                to_date = datetime.now()
+            kwargs[
+                "KeyConditionExpression"
+            ] += " AND TimestampCreated BETWEEN :from_date AND :to_date"
+            kwargs["ExpressionAttributeValues"].update(
+                {
+                    ":from_date": {"N": str(from_date.timestamp())},
+                    ":to_date": {"N": str(to_date.timestamp())},
+                }
+            )
+        response = self._query(
+            **kwargs,
+            recursive=True,
             IndexName="UserIdGlobalIndex",
-            KeyConditionExpression="UserId = :user_id",
         )
         return response["Items"]
 
@@ -103,6 +125,6 @@ class ChatsTableController(BaseTableController):
             },
             KeyConditionExpression="SessionId = :session_id",
             FilterExpression="ImageId <> :empty",
-            **extra_kwargs
+            **extra_kwargs,
         )
         return response["Items"]

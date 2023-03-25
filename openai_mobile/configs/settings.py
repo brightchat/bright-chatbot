@@ -123,6 +123,15 @@ class ProjectSettings(BaseSettings):
         """
         return cls.get("MAX_ACTIVE_SESSIONS", 100, cast=int)
 
+    # === DynamoDB Backend Settings ===
+
+    @classproperty
+    def DYNAMODB_TABLES_PREFIX(cls) -> str:
+        """
+        Prefix used for all DynamoDB tables names.
+        """
+        return cls.get("DYNAMODB_TABLES_PREFIX", "")
+
     # === Twilio Provider Settings ===
 
     @classproperty

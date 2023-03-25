@@ -1,10 +1,5 @@
 # Application ignored files:
 
-deploy/cloudformation/params.json
-deploy/cloudformation/.sam-params
-deploy/cloudformation/.aws-sam
-deploy/cloudformation/samconfig.toml
-
 # Node
 node_modules/
 

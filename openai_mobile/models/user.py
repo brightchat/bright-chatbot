@@ -33,3 +33,4 @@ class UserSession(BaseModel):
     session_id: str
     session_start: datetime
     session_end: datetime
+    session_quota: int = ProjectSettings.MAX_REQUESTS_PER_SESSION

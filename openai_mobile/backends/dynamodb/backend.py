@@ -5,6 +5,7 @@ from openai_mobile.models import User, UserSession
 from openai_mobile.backends.base_backend import BaseDataBackend
 from openai_mobile.backends.dynamodb._controller import DynamoTablesController
 from openai_mobile.models.message import MessagePrompt, MessageResponse
+from openai_mobile.configs import ProjectSettings
 
 
 class DynamodbBackend(BaseDataBackend):
@@ -31,11 +32,14 @@ class DynamodbBackend(BaseDataBackend):
             session_id=session_id,
             session_start=session_obj["TimestampCreated"]["N"],
             session_end=session_obj["SessionTTL"]["N"],
+            session_quota=session_obj["MessagesQuota"]["N"],
         )
         return user_session
 
     def create_user_session(self, user: User) -> UserSession:
-        session_obj = self.controller.sessions.record_user_session(user.hashed_user_id)
+        session_obj = self.controller.sessions.record_user_session(
+            user.hashed_user_id, messages_quota=ProjectSettings.MAX_REQUESTS_PER_SESSION
+        )
         session_id = session_obj["SessionId"]["S"]
         user_session = UserSession(
             user=user,
@@ -54,20 +58,13 @@ class DynamodbBackend(BaseDataBackend):
     def get_count_of_active_sessions(self) -> int:
         return self.controller.sessions.count_active_sessions()
 
-    def get_today_count_of_user_sessions(self, user: User) -> int:
-        today_start_date = datetime.utcnow().replace(hour=0, minute=0, second=0)
-        user_sessions = self.controller.sessions.get_user_sessions(
-            user_id=user.hashed_user_id,
-            session_id_only=True,
-            created_at_start=today_start_date,
-        )
-        return len(user_sessions)
-
     def get_count_of_session_prompts(self, session: UserSession) -> int:
         user_chat_messages = self.controller.chats.get_user_chat_session(
             session_id=session.session_id
         )
-        return len(user_chat_messages)
+        return len(
+            list(filter(lambda x: x["Agent"]["S"] == "user", user_chat_messages))
+        )
 
     def get_session_chat_history(
         self, session: UserSession

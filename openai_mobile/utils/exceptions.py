@@ -33,8 +33,25 @@ class ImproperlyConfigured(Exception):
 
 class SessionLimitError(Exception):
     """
-    Error raised when the maximum number of active sessions
+    Error raised when the maximum total number of active sessions
     is reached.
+    """
+
+    pass
+
+
+class SessionQuotaLimitReached(Exception):
+    """
+    Error raised when the maximum number of requests allowed per session
+    is reached.
+    """
+
+    pass
+
+
+class AuthError(Exception):
+    """
+    Error raised when a user is not authorized
     """
 
     pass
