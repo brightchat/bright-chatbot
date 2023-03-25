@@ -16,6 +16,7 @@ Assistant: "Sure!, I'll tell Dalia to generate the image with a brown cat. Dalia
 SESSION_STATUS_PROMPT = """
 Chat session started at UTC date and time: {week_day}, {month} {day}, {year} at {hour}:{minute}:{second}.
 According to the User's subscription plan, they can send not more than {session_quota} messages in this conversation.
+Users can upgrade their subscription plan to send more messages at any time by going to https://brightbot.chat/
 """
 
 
