@@ -2,6 +2,7 @@ import abc
 from typing import List, Union
 
 from openai_mobile.models import User, UserSession, MessagePrompt, MessageResponse
+from openai_mobile.configs import ProjectSettings
 
 
 class BaseDataBackend(abc.ABC):
@@ -14,7 +15,9 @@ class BaseDataBackend(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def create_user_session(self, user: User) -> UserSession:
+    def create_user_session(
+        self, user: User, sess_quota: int = ProjectSettings.MAX_REQUESTS_PER_SESSION
+    ) -> UserSession:
         """
         Creates a new session for an user.
         """
@@ -32,13 +35,6 @@ class BaseDataBackend(abc.ABC):
         """
         Returns the total number of active sessions
         across all users.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_today_count_of_user_sessions(self, user: User) -> int:
-        """
-        Returns the number of sessions that the user has had today.
         """
         raise NotImplementedError()
 

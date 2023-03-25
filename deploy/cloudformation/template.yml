@@ -17,6 +17,9 @@ Parameters:
   TwilioPhoneNumber:
     Type: String
     Description: "Twilio registered phone number associated with the account used. eg: 'whatsapp:+12345678901'"
+  AdminEmail:
+    Type: String
+    Description: Email address of the application's admin user for notifications.
   BotImageGenerationSize:
     Type: String
     Default: small
@@ -28,6 +31,9 @@ Parameters:
   OpenAIMobileSecretKey:
     Type: String
     Description: A secure secret key.
+  StripeApiKey:
+    Type: String
+    Description: API key used to authenticate to the Stripe API
   SessionsExpirationMinutes:
     Type: Number
     Description: Number of minutes a user session has until it expires from the time of creation.
@@ -64,7 +70,9 @@ Resources:
   SessionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: "Sessions"
+      TableName: !Sub
+        - "${AppName}Sessions"
+        - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         - AttributeName: "UserId"
@@ -82,12 +90,14 @@ Resources:
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
-        - Key: "application"
+        - Key: "Application"
           Value: !Ref AppName
   ChatsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: "Chats"
+      TableName: !Sub
+        - "${AppName}Chats"
+        - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         - AttributeName: "SessionId"
@@ -113,12 +123,14 @@ Resources:
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
-        - Key: "application"
+        - Key: "Application"
           Value: !Ref AppName
   ImageResponsesTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: "ImageResponses"
+      TableName: !Sub
+        - "${AppName}ImageResponses"
+        - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         - AttributeName: "Prompt"
@@ -142,19 +154,19 @@ Resources:
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
-        - Key: "application"
+        - Key: "Application"
           Value: !Ref AppName
   # ==== SQS FIFO Queue ====
-  MessagesQueue:
+  MessagesQueue: # Main queue where the messages are sent to
     Type: AWS::SQS::Queue
     Properties:
-      MessageRetentionPeriod: 7200 # 2 hours
+      MessageRetentionPeriod: 7200 # 2 hoursy
       ReceiveMessageWaitTimeSeconds: 10 # Long polling
       VisibilityTimeout: 310 # 10 secs more than lambda timeout
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
-        - Key: "application"
+        - Key: "Application"
           Value: !Ref AppName
   # ==== API Gateway ====
   BackendApiSqsIamRole:
@@ -192,7 +204,7 @@ Resources:
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
-        - Key: "application"
+        - Key: "Application"
           Value: !Ref AppName
   DevelopmentBackendApi:
     Type: AWS::Serverless::Api
@@ -262,25 +274,6 @@ Resources:
                     Action=SendMessage&MessageBody=body:$body,headers:$input.params().header,uri_path:$context.path"
                 passthroughBehavior: "never"
                 type: "aws"
-          /twilio/status:
-            post:
-              consumes:
-              - "application/json"
-              produces:
-              - "application/json"
-              responses:
-                "200":
-                  description: "200 response"
-                  schema:
-                    $ref: "#/definitions/Empty"
-              x-amazon-apigateway-integration:
-                responses:
-                  default:
-                    statusCode: "200"
-                requestTemplates:
-                  application/json: "{\"statusCode\": 200}"
-                passthroughBehavior: "when_no_match"
-                type: "mock"
         definitions:
           Empty:
             type: "object"
@@ -288,6 +281,34 @@ Resources:
         managed_by: "CloudFormation"
         application: !Ref AppName
   # === Lambda Function ===
+  MessagesQueueDLQ: # Store failed messages in this queue
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 # 14 days
+      ReceiveMessageWaitTimeSeconds: 10 # Long polling
+      VisibilityTimeout: 300
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
+  DeadLetterTopic: # Use an SNS Topic as the dead letter queue of the lambda function
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "Dead Letter Topic"
+      TopicName: !Sub
+        - "${AppName}DeadLetterTopic"
+        - AppName: !Ref AppName
+      Subscription:
+        - Endpoint: !Ref AdminEmail
+          Protocol: email
+        - Endpoint: !GetAtt MessagesQueueDLQ.Arn
+          Protocol: sqs
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
   LambdaIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -324,6 +345,10 @@ Resources:
                   - !Sub
                     - "${Arn}/index/*"
                     - Arn: !GetAtt ImageResponsesTable.Arn
+              # Allow the lambda function to publish to the SNS Topic
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref DeadLetterTopic
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
@@ -331,7 +356,7 @@ Resources:
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
-        - Key: "application"
+        - Key: "Application"
           Value: !Ref AppName
   BackendLambdaFunction:
     Type: AWS::Serverless::Function
@@ -368,6 +393,12 @@ Resources:
           OPENAI_MOBILE_MAX_SESSIONS_PER_DAY: !Ref SessionsQuotaPerUser
           OPENAI_MOBILE_MAX_REQUESTS_PER_SESSION: !Ref MessagesQuotaPerUserSession
           OPENAI_MOBILE_ADMIN_USERS: !Ref AppAdminUsers
+          OPENAI_MOBILE_DYNAMODB_TABLES_PREFIX: !Ref AppName
+          STRIPE_API_KEY: !Ref StripeApiKey
+      # Dead letter queue configuration
+      DeadLetterQueue:
+        Type: SNS
+        TargetArn: !Ref DeadLetterTopic
       Tags:
         managed_by: "CloudFormation"
         application: !Ref AppName

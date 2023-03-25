@@ -66,7 +66,7 @@ class SessionsTableController(BaseTableController):
         )
         return response["Items"]
 
-    def record_user_session(self, user_id: str) -> Dict[str, Any]:
+    def record_user_session(self, user_id: str, messages_quota: int) -> Dict[str, Any]:
         """
         Records a new user session into the Sessions table
         """
@@ -84,6 +84,7 @@ class SessionsTableController(BaseTableController):
             "TimestampFinished": {
                 "NULL": True,
             },
+            "MessagesQuota": {"N": str(messages_quota)},
             "SessionTTL": {"N": str(ttl)},
         }
         self._put_item(Item=item)

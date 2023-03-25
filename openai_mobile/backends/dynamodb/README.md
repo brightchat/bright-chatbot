@@ -16,6 +16,7 @@ Logs the current active sessions that an user is on. Sessions are unique for eac
 | SessionId | Identifier of the session that an user is on | Text (UserId + ":" + TimestampCreated) | No | Yes
 | TimestampCreated | UNIX Timestamp for when the session was created | Numeric | No | No
 | TimestampFinished | UNIX Timestamp for when the session was forcefully finished | Numeric | No | No
+| MessagesQuota | Number of messages that the user can send in the session | Numeric | No | No
 | SessionTTL | UNIX Timestamp denoting the time when the session will expire (30 mins after session creation) | Numeric | No | No
 
 > `SessionTTL` is a TimeToLive property that specifies date and time when the item in the table will expire (See [DynamoDB TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html)).

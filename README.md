@@ -9,7 +9,7 @@ Python package that uses the OpenAI API to carry out a conversation with OpenAI'
 
 **Coming Soon!**
 
-- Transcribe voice messages to text right from your mobile chat application.
+- Transcribe voice messages to text right from your mobile chat application using [Whisper](https://openai.com/blog/whisper/)
 
 ![Image of ChatGPT Mobile Chatbot](docs/images/whatsapp-img-example.jpeg?raw=true "ChatGPT Mobile Chatbot")
 
@@ -25,7 +25,7 @@ Python package that uses the OpenAI API to carry out a conversation with OpenAI'
 - [AWS DynamoDB](https://aws.amazon.com/dynamodb/).
     See the [DynamoDB backend documentation](openai_mobile/backends/dynamodb/backend.py) to see
     how to setup the DynamoDB tables.
-- [PostgreSQL](https://www.postgresql.org/). (Coming Soon)
+- [SQL Database Backend (Powered by SQLAlchemy)](https://docs.sqlalchemy.org/en/20/dialects/index.html). (Coming Soon)
 
 ## Quick Deployment
 

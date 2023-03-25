@@ -62,6 +62,8 @@ class OpenAIChatClient:
             self._make_reply(prompt)
         except errors.SessionLimitError:
             self._handle_error(prompt, error_msgs.MAX_ACTIVE_SESSIONS_SURPASSED)
+        except errors.SessionQuotaLimitReached:
+            self._handle_error(prompt, error_msgs.QUOTA_SURPASSED)
         except errors.ModerationError:
             self._handle_error(prompt, error_msgs.MODERATION_ERROR)
         except Exception as e:
@@ -198,12 +200,15 @@ class OpenAIChatClient:
             self.backend.get_count_of_session_prompts, session
         )
         if sess_cnt_prm.result() > ProjectSettings.MAX_ACTIVE_SESSIONS:
-            return errors.SessionLimitError(
+            raise errors.SessionLimitError(
                 f"Maximum total number of active sessions ({ProjectSettings.MAX_ACTIVE_SESSIONS}) reached"
             )
-        if sess_msgs_cnt_prm.result() > ProjectSettings.MAX_REQUESTS_PER_SESSION:
-            return errors.SessionLimitError(
-                f"Maximum number of prompts per session ({ProjectSettings.MAX_REQUESTS_PER_SESSION}) reached"
+        prompts_cnt = sess_msgs_cnt_prm.result()
+        self.logger.debug(f"User number of prompts: {prompts_cnt}")
+        self.logger.debug(f"User session quota: {session.session_quota}")
+        if prompts_cnt > session.session_quota:
+            raise errors.SessionQuotaLimitReached(
+                f"Maximum number of prompts allowed in this session ({session.session_quota}) has been reached"
             )
         return None
 

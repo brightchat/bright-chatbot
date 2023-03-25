@@ -73,11 +73,13 @@ class MessageResponse(BaseModel):
         Returns a string representation of the content of the message.
         """
         if self.media_url:
-            return f"Image({self.body})"
+            return f"Dalia: '{self.body}'"
         return self.body
 
     def to_chat_repr(self) -> Dict[str, str]:
         """
         Returns a string representation of the message that can be used for chat completions
         """
+        if self.media_url:
+            return {"role": "user", "content": self.to_text_repr()}
         return {"role": "assistant", "content": self.to_text_repr()}

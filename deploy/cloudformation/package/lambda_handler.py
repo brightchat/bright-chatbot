@@ -1,14 +1,13 @@
-from base64 import b64decode
 import logging
 import os
-import re
 from typing import Dict, Any
-from urllib.parse import parse_qs
 
 from openai_mobile.client import OpenAIChatClient
 from openai_mobile.providers.twilio import TwilioProvider
-from openai_mobile.backends import DynamodbBackend
 from openai_mobile.models import MessagePrompt, User
+
+from request_parser import parse_event_body, build_api_callback_url
+from dynamo_auth_backend import DynamoSessionAuthBackend
 
 try:
     from aws_xray_sdk.core import patch_all
@@ -35,7 +34,7 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     verify_request_auth(parsed_body)
     # Initiate provider and backend:
     provider = TwilioProvider()
-    backend = DynamodbBackend()
+    backend = DynamoSessionAuthBackend()
     # Initiate client
     client = OpenAIChatClient(provider=provider, backend=backend)
     # Create User message prompt:
@@ -66,53 +65,6 @@ def verify_request_auth(parsed_body: Dict[str, Any]):
     params = parsed_body["params"]
     headers = parsed_body["headers"]
     signature = headers["X-Twilio-Signature"].replace(" ", "+")
-    TwilioProvider.verify_signature(
+    TwilioProvider().verify_signature(
         callback_url, params, signature, raise_on_failure=True
     )
-
-
-def build_api_callback_url(parsed_body: Dict[str, Any]) -> str:
-    """
-    From the lambda function event, reconstructs the URL
-    of the API gateway endpoint where the event comes from
-    """
-    headers = parsed_body["headers"]
-    uri_path = parsed_body["uri_path"]
-    return f"https://{headers['Host']}{uri_path}"
-
-
-def parse_event_body(event_body: str) -> Dict[str, Any]:
-    body_parts = event_body_to_parts(event_body)
-    response = {
-        "headers": raw_header_to_dict(body_parts["headers"]),
-        "params": url_params_to_dict(body_parts["body"]),
-        "uri_path": body_parts["uri_path"],
-    }
-    return response
-
-
-def event_body_to_parts(event_body: str) -> Dict[str, str]:
-    regex = re.compile(
-        r"body:(?P<body>[\w=]+),headers:{(?P<headers>.*)},uri_path:(?P<uri_path>[\w/]+)"
-    )
-    matches = re.match(regex, event_body)
-    grouped_m = matches.groupdict()
-    return grouped_m
-
-
-def url_params_to_dict(body: str) -> Dict[str, str]:
-    body = b64decode(body).decode("utf-8")
-    body_params = {key: v[0] for key, v in parse_qs(body.strip('"')).items()}
-    return body_params
-
-
-def raw_header_to_dict(raw_headers: str) -> Dict[str, str]:
-    ls = list(map(str.strip, raw_headers.split(",")))
-    d = {}
-    for h in ls:
-        splitted = h.split("=", maxsplit=1)
-        if len(splitted) < 2:
-            continue
-        key, value = splitted
-        d[key] = value
-    return d

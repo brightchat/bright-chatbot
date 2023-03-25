@@ -27,8 +27,9 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
         response = models.MessageResponse(
             body=parsed_answer["response_body"], to_user=prompt.from_user
         )
+        raw_response = models.MessageResponse(body=txt_answer, to_user=prompt.from_user)
         self.client.send_response(response)
-        self.client.save_response(response, user_session)
+        self.client.save_response(raw_response, user_session)
         output = models.HandlerOutput(
             message_prompt=prompt,
             message_response=response,
@@ -81,8 +82,8 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
         and the answer without the image prompt.
         """
         patterns = [
-            r"Image\([\"']?(.*?)[\"']?\)",
-            r"Image:\s*\(?[\"']?(.*)[\"']?\)?",
+            r"Dalia\s*\([\"']?(.*?)[\"']?\)",
+            r"Dalia:\s*\(?[\"']?(.*)[\"']?\)?",
             r".*?generating.*?image.*?[\r\n]{2,}(.*)",
         ]
         for pattern in patterns:
