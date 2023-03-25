@@ -15,10 +15,13 @@ Assistant: "Sure!, I'll tell Dalia to generate the image with a brown cat. Dalia
 
 SESSION_STATUS_PROMPT = """
 Chat session started at UTC date and time: {week_day}, {month} {day}, {year} at {hour}:{minute}:{second}.
+According to the User's subscription plan, they can send not more than {session_quota} messages in this conversation.
 """
 
 
-def get_session_status_system_prompt(session_start: datetime) -> str:
+def get_session_status_system_prompt(
+    session_start: datetime, session_quota: int
+) -> str:
     """
     Returns the system role prompt of the session status
     """
@@ -30,6 +33,7 @@ def get_session_status_system_prompt(session_start: datetime) -> str:
         hour=session_start.hour,
         minute=session_start.minute,
         second=session_start.second,
+        session_quota=session_quota,
     ).strip()
 
 

@@ -156,20 +156,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
-  # ==== SQS FIFO Queue ====
-  MessagesQueue: # Main queue where the messages are sent to
-    Type: AWS::SQS::Queue
-    Properties:
-      MessageRetentionPeriod: 7200 # 2 hoursy
-      ReceiveMessageWaitTimeSeconds: 10 # Long polling
-      VisibilityTimeout: 310 # 10 secs more than lambda timeout
-      Tags:
-        - Key: "managed_by"
-          Value: "CloudFormation"
-        - Key: "Application"
-          Value: !Ref AppName
   # ==== API Gateway ====
-  BackendApiSqsIamRole:
+  BackendApiIamRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -188,9 +176,10 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+              # Allow the API Gateway to invoke the Lambda function
               - Effect: Allow
-                Action: sqs:SendMessage
-                Resource: !GetAtt MessagesQueue.Arn
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt BackendLambdaFunction.Arn
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -217,7 +206,9 @@ Resources:
         info:
           description: "Development stage of the API for the application"
           version: "2022-11-13T12:36:49Z"
-          title: "openai-ws-bot"
+          title: !Sub
+            - "${AppName} BackendApi"
+            - AppName: !Ref AppName
         basePath: "/dev"
         schemes:
         - "https"
@@ -256,11 +247,9 @@ Resources:
                     Content-Type:
                       type: "string"
               x-amazon-apigateway-integration:
-                credentials: !GetAtt BackendApiSqsIamRole.Arn
+                credentials: !GetAtt BackendApiIamRole.Arn
                 httpMethod: "POST"
-                uri: !Sub
-                  - "arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/${QueueName}"
-                  - QueueName: !GetAtt MessagesQueue.QueueName
+                # Call the Lambda function
                 responses:
                   default:
                     statusCode: "200"
@@ -269,11 +258,11 @@ Resources:
                     contentHandling: "CONVERT_TO_TEXT"
                 requestParameters:
                   integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
-                requestTemplates:
-                  application/x-www-form-urlencoded: "#set($body=$util.base64Encode($input.json('$')))\n\
-                    Action=SendMessage&MessageBody=body:$body,headers:$input.params().header,uri_path:$context.path"
                 passthroughBehavior: "never"
-                type: "aws"
+                type: "aws_proxy"
+                uri: !Sub
+                  - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
+                  - LambdaArn: !GetAtt BackendLambdaFunction.Arn
         definitions:
           Empty:
             type: "object"
@@ -373,12 +362,6 @@ Resources:
       PackageType: Zip
       CodeUri: ./package
       ReservedConcurrentExecutions: 10
-      Events:
-        MessageInQueueEvent:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt MessagesQueue.Arn
-            BatchSize: 1
       Environment:
         Variables:
           TWILIO_AUTH_TOKEN: !Ref TwilioAuhToken
@@ -399,6 +382,9 @@ Resources:
       DeadLetterQueue:
         Type: SNS
         TargetArn: !Ref DeadLetterTopic
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 180
+        MaximumRetryAttempts: 0
       Tags:
         managed_by: "CloudFormation"
         application: !Ref AppName

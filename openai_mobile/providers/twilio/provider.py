@@ -10,7 +10,7 @@ from openai_mobile.utils.exceptions import ValidationError
 
 
 class TwilioProvider(BaseProvider):
-    MSG_LENGTH_LIMIT = 1600
+    MSG_LENGTH_LIMIT = 1250
 
     def __init__(self, **twilio_client_kwargs):
         self._client = Client(**twilio_client_kwargs)

@@ -49,9 +49,13 @@ class DynamoSessionAuthBackend(DynamodbBackend):
                 f"User {user.user_id} has subscription {user_subscription}"
             )
             user_subscription = user_subscription.title()
-            if user_subscription in ("Standard", "Standard Plan", "Standard Test Plan"):
+            if user_subscription in (
+                "BrightBot Standard",
+                "Standard Plan",
+                "Standard Test Plan",
+            ):
                 max_daily_quota = 100
-            if user_subscription in ("Premium", "Premium Plan"):
+            if user_subscription in ("BrightBot Unlimited", "Premium Plan"):
                 max_daily_quota = 10e6
         logging.getLogger("openai_mobile").debug(
             f"User {user.user_id} does not have a subscription"
@@ -68,7 +72,9 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         user_conversation = self.controller.chats.get_user_chat_messages(
             user_id=user.hashed_user_id, from_date=day_start_date
         )
-        user_msgs = list(filter(lambda x: x["Agent"]["S"] == "user", user_conversation))
+        user_msgs = list(
+            filter(lambda x: x["ChatAgent"]["S"] == "user", user_conversation)
+        )
         return len(user_msgs)
 
     def _get_user_subscription(self, user: User) -> str:

@@ -63,7 +63,7 @@ class DynamodbBackend(BaseDataBackend):
             session_id=session.session_id
         )
         return len(
-            list(filter(lambda x: x["Agent"]["S"] == "user", user_chat_messages))
+            list(filter(lambda x: x["ChatAgent"]["S"] == "user", user_chat_messages))
         )
 
     def get_session_chat_history(
@@ -94,9 +94,7 @@ class DynamodbBackend(BaseDataBackend):
                     )
                 )
             else:
-                raise ValueError(
-                    "Invalid agent type. Got: '{}'".format(message["ChatAgent"])
-                )
+                raise ValueError("Invalid agent type. Got: '{}'".format(message_agent))
         return chat_history
 
     def save_message_prompt(
