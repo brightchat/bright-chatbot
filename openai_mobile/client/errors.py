@@ -15,8 +15,8 @@ UNEXPECTED_ERROR = ApplicationError(
 
 QUOTA_SURPASSED = ApplicationError(
     message=(
-        "You have reached the maximum number of messages you can send for this session. "
-        "Please try again later."
+        "You have reached the maximum number of messages you can send for this session.\n"
+        "Increase your message quota at https://brightbot.chat/."
     ),
     status_code=429,
 )

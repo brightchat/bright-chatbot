@@ -85,4 +85,5 @@ class ChatHistory(BaseModel):
             hour=session_start.hour,
             minute=session_start.minute,
             second=session_start.second,
+            session_quota=self.session.session_quota,
         ).strip()
