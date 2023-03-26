@@ -12,8 +12,10 @@ from bright_chatbot.utils.exceptions import ValidationError
 
 from request_parser import parse_event_body
 
+xray_recorder = None
 try:
     from aws_xray_sdk.core import patch_all
+    from aws_xray_sdk.core import xray_recorder
 
     patch_all()
 except ImportError:
@@ -29,7 +31,7 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     """
     logger = init_logger()
     if logger.level < 30:
-        print(f"event:\n{json.dumps(event)}")
+        print(f"Received event:\n{json.dumps(event)}")
     # Parse event body:
     parsed_body = parse_event_body(event)
     # Verify signature:
@@ -58,6 +60,10 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         body=message_event["Body"],
         from_user=user,
     )
+    # Record the User Id with X-ray
+    if xray_recorder:
+        document = xray_recorder.current_segment()
+        document.set_user(user.hashed_user_id)
     client.reply(message_prompt)
     return {
         "isBase64Encoded": False,
