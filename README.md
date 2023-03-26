@@ -1,6 +1,6 @@
-# OpenAI (ChatGPT) Mobile Chatbot
+# BrightBot Mobile Chatbot
 
-Python package that uses the OpenAI API to carry out a conversation with OpenAI's incredible language models right from your phone, using WhatApp or SMS (By leveraging the Twilio Provider).
+Python package of 'Brightbot', a chat bot that uses the OpenAI API to carry out a conversation with OpenAI's incredible language models right from your phone, using WhatApp or SMS (By leveraging the Twilio Provider).
 
 **Features:**
 
@@ -23,7 +23,7 @@ Python package that uses the OpenAI API to carry out a conversation with OpenAI'
 ### Supported Data Backends
 
 - [AWS DynamoDB](https://aws.amazon.com/dynamodb/).
-    See the [DynamoDB backend documentation](openai_mobile/backends/dynamodb/backend.py) to see
+    See the [DynamoDB backend documentation](bright_chatbot/backends/dynamodb/backend.py) to see
     how to setup the DynamoDB tables.
 - [SQL Database Backend (Powered by SQLAlchemy)](https://docs.sqlalchemy.org/en/20/dialects/index.html). (Coming Soon)
 
@@ -100,12 +100,12 @@ respond to a request coming from Twilio. The class `TwilioProvider` can validate
 > for details on how to setup the Callback URL and check how the requests are sent to your application.
 
 ```python
-from openai_mobile.client import OpenAIChatClient
+from bright_chatbot.client import OpenAIChatClient
 
-from openai_mobile.providers import TwilioProvider
-from openai_mobile.backends import DynamodbBackend
+from bright_chatbot.providers import TwilioProvider
+from bright_chatbot.backends import DynamodbBackend
 
-from openai_mobile.models import MessagePrompt, User
+from bright_chatbot.models import MessagePrompt, User
 
 # Obtain the request object made to your application:
 request = get_request()

@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_namespace_packages
 
-PACKAGE_NAME = "openai_mobile"
+PACKAGE_NAME = "bright_chatbot"
 PACKAGE_DIRNAME = os.path.join(os.path.dirname(__file__), PACKAGE_NAME)
 
 
