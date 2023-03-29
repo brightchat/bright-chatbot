@@ -23,6 +23,9 @@ Parameters:
   TwilioPhoneNumber:
     Type: String
     Description: "Twilio registered phone number associated with the account used. eg: 'whatsapp:+12345678901'"
+  OpenAIMobileSecretKey:
+    Type: String
+    Description: Application Secret Key for cryptographically signing
   AdminEmail:
     Type: String
     Description: Email address of the application's admin user for notifications.
@@ -225,6 +228,7 @@ Resources:
       ReservedConcurrentExecutions: 10
       Environment:
         Variables:
+          OPENAI_MOBILE_SECRET_KEY: !Ref OpenAIMobileSecretKey
           TWILIO_AUTH_TOKEN: !Ref TwilioAuhToken
           TWILIO_ACCOUNT_SID: !Ref TwilioAccountSID
           TWILIO_PHONE_NUMBER: !Ref TwilioPhoneNumber

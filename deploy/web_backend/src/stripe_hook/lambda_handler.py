@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict
 
-from bright_chatbot.models import MessagePrompt, User, MessageResponse
+from bright_chatbot.models import User, MessageResponse
 from bright_chatbot.providers.twilio import TwilioProvider
 from bright_chatbot.utils.exceptions import ValidationError
 
@@ -11,10 +12,8 @@ import stripe
 
 stripe.api_key = os.environ["STRIPE_API_KEY"]
 
-xray_recorder = None
 try:
     from aws_xray_sdk.core import patch_all
-    from aws_xray_sdk.core import xray_recorder
 
     patch_all()
 except ImportError:
@@ -30,7 +29,7 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     """
     logger = init_logger()
     if logger.level < 30:
-        print(f"Received event:\n{json.dumps(event)}")
+        print(f"Received lambda event:\n{json.dumps(event)}")
     try:
         event = get_stripe_event(event["body"], event["headers"]["Stripe-Signature"])
     except ValueError as e:
@@ -53,7 +52,17 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             },
             "body": json.dumps({"error": "Unauthorized"}),
         }
-    print(f"Received event {event}, {type(event)}")
+    # Get message template from file
+    with open(Path(__file__).parent / "message_template.txt") as f:
+        message_template = f.read()
+    user_phone = event["data"]["object"]["customer_details"]["phone"]
+    user = User(user_id=f"whatsapp:{user_phone}")
+    msg_response = MessageResponse(
+        body=message_template,
+        to_user=user,
+    )
+    provider = TwilioProvider()
+    provider.send_message(msg_response)
     return {
         "isBase64Encoded": False,
         "statusCode": 200,
