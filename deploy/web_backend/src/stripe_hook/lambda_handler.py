@@ -52,9 +52,13 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
             },
             "body": json.dumps({"error": "Unauthorized"}),
         }
-    # Get message template from file
-    with open(Path(__file__).parent / "message_template.txt") as f:
-        message_template = f.read()
+    if os.environ.get("WEBHOOK_WS_MESSAGE_TEMPLATE"):
+        # Get message template from environment variable
+        message_template = os.environ["WEBHOOK_WS_MESSAGE_TEMPLATE"]
+    else:
+        # Get default message template from file
+        with open(Path(__file__).parent / "default_message_template.txt") as f:
+            message_template = f.read()
     user_phone = event["data"]["object"]["customer_details"]["phone"]
     user = User(user_id=f"whatsapp:{user_phone}")
     msg_response = MessageResponse(

@@ -60,10 +60,10 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         body=message_event["Body"],
         from_user=user,
     )
-    # Record the User Id with X-ray
+    # Record the User Id with X-ray using a new subsegment
     if xray_recorder:
-        document = xray_recorder.current_segment()
-        document.set_user(user.hashed_user_id)
+        subsegment = xray_recorder.begin_subsegment("bright_chatbot")
+        subsegment.put_annotation("user_id", user.hashed_user_id)
     client.reply(message_prompt)
     return {
         "isBase64Encoded": False,

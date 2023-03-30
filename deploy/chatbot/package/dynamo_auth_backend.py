@@ -46,19 +46,23 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         used_quota = self._get_user_used_quota(user)
         if user_subscription is not None:
             logging.getLogger("bright_chatbot").debug(
-                f"User {user.user_id} has subscription {user_subscription}"
+                f"User {user.user_id} has subscription '{user_subscription}'"
             )
-            user_subscription = user_subscription.title()
             if user_subscription in (
                 "BrightBot Standard",
                 "Standard Plan",
                 "Standard Test Plan",
             ):
                 max_daily_quota = 100
-            if user_subscription in ("BrightBot Unlimited", "Premium Plan"):
+            elif user_subscription in ("BrightBot Unlimited", "Premium Plan"):
                 max_daily_quota = 10e6
+        else:
+            logging.getLogger("bright_chatbot").debug(
+                f"User {user.user_id} does not have a subscription"
+            )
         logging.getLogger("bright_chatbot").debug(
-            f"User {user.user_id} does not have a subscription"
+            f"Set max daily quota for user {user.user_id} to {max_daily_quota} "
+            f" and used quota to {used_quota}"
         )
         return max_daily_quota - used_quota
 
