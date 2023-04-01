@@ -1,5 +1,7 @@
 # Application ignored files:
 
+*.env
+
 # Node
 node_modules/
 

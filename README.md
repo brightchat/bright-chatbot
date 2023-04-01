@@ -36,7 +36,7 @@ with just a few commands.
 
 The deployed application will be ready to use with the Twilio Provider and the DynamoDB backend and be highly scalable and fault tolerant by using AWS' family of serverless resources.
 
-**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/cloudformation/README.md) to deploy the application with the CloudFormation stack.**
+**Just go to the `deploy/cloudformation` directory and follow [these instructions](deploy/chatbot/README.md) to deploy the application with the CloudFormation stack.**
 
 The CloudFormation stack handles the creation of the DynamoDB tables, Lambda function,
 and an API Gateway endpoint that can be used as the Callback URL of your Twilio messaging service.

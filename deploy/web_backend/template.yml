@@ -1,0 +1,259 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description:  Resources for some backend endpoints of the web application
+
+Parameters:
+  AppName:
+    Type: String
+    Description: Name of the application
+    Default: BrightBotWeb
+  StripeApiKey:
+    Type: String
+    Description: API key used to authenticate to the Stripe API
+  StripeWebhookSecret:
+    Type: String
+    Description: Endpoint Secret used to authenticate to the Stripe API when receiving webhooks
+  TwilioAuhToken:
+    Type: String
+    Description: Token used to authenticate to the Twilio API
+  TwilioAccountSID:
+    Type: String
+    Description: Account SID used to authenticate to the Twilio API
+  TwilioPhoneNumber:
+    Type: String
+    Description: "Twilio registered phone number associated with the account used. eg: 'whatsapp:+12345678901'"
+  OpenAIMobileSecretKey:
+    Type: String
+    Description: Application Secret Key for cryptographically signing
+  AdminEmail:
+    Type: String
+    Description: Email address of the application's admin user for notifications.
+  LambdaLogLevel:
+    Type: String
+    Description: Log level of the Lambda function used as backend of the application.
+    Default: WARNING
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+      - CRITICAL
+Resources:
+  # ==== API Gateway ====
+  BackendApiIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub
+            - "${AppName}ApiRolePolicy"
+            - AppName: !Ref AppName
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the API Gateway to invoke the Lambda function
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt StripeWebhookLambdaFunction.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
+                Resource: "*"
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
+  DevelopmentBackendApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: api
+      Description: Default stage of the API
+      TracingEnabled: True
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          description: "Development stage of the API for the application"
+          version: "2022-11-13T12:36:49Z"
+          title: !Sub
+            - "${AppName} BackendApi"
+            - AppName: !Ref AppName
+        basePath: "/"
+        schemes:
+        - "https"
+        paths:
+          /:
+            get:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+              x-amazon-apigateway-integration:
+                responses:
+                  default:
+                    statusCode: "200"
+                requestTemplates:
+                  application/json: "{\"statusCode\": 200}"
+                passthroughBehavior: "when_no_match"
+                type: "mock"
+          /stripe/checkout:
+            post:
+              consumes:
+              - "application/json"
+              produces:
+              - "application/json"
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Content-Type:
+                      type: "string"
+              x-amazon-apigateway-integration:
+                credentials: !GetAtt BackendApiIamRole.Arn
+                httpMethod: "POST"
+                # Call the Lambda function
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseTemplates:
+                      application/json: ""
+                passthroughBehavior: "never"
+                type: "aws_proxy"
+                uri: !Sub
+                  - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
+                  - LambdaArn: !GetAtt StripeWebhookLambdaFunction.Arn
+        definitions:
+          Empty:
+            type: "object"
+      Tags:
+        managed_by: "CloudFormation"
+        application: !Ref AppName
+  # === Lambda Function ===
+  MessagesQueueDLQ: # Store failed messages in this queue
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600 # 14 days
+      ReceiveMessageWaitTimeSeconds: 10 # Long polling
+      VisibilityTimeout: 300
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
+  DeadLetterTopic: # Use an SNS Topic as the dead letter queue of the lambda function
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "Dead Letter Topic"
+      TopicName: !Sub
+        - "${AppName}DeadLetterTopic"
+        - AppName: !Ref AppName
+      Subscription:
+        - Endpoint: !Ref AdminEmail
+          Protocol: email
+        - Endpoint: !GetAtt MessagesQueueDLQ.Arn
+          Protocol: sqs
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
+  LambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub
+            - "${AppName}LambdaRolePolicy"
+            - AppName: !Ref AppName
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Allow the lambda function to publish to the SNS Topic
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref DeadLetterTopic
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
+  StripeWebhookLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.9
+      Role: !GetAtt LambdaIAMRole.Arn
+      Handler: lambda_handler.lambda_handler
+      Description: !Sub
+        - "Lambda Function to Handle the callback of the stripe checkout webhook for the '${AppName}' application"
+        - AppName: !Ref AppName
+      Tracing: Active
+      Timeout: 300
+      MemorySize: 512
+      PackageType: Zip
+      CodeUri: ./src/stripe_hook
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          OPENAI_MOBILE_SECRET_KEY: !Ref OpenAIMobileSecretKey
+          TWILIO_AUTH_TOKEN: !Ref TwilioAuhToken
+          TWILIO_ACCOUNT_SID: !Ref TwilioAccountSID
+          TWILIO_PHONE_NUMBER: !Ref TwilioPhoneNumber
+          LAMBDA_LOG_LEVEL: !Ref LambdaLogLevel
+          APP_NAME: !Ref AppName
+          STRIPE_API_KEY: !Ref StripeApiKey
+          STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
+      # Dead letter queue configuration
+      DeadLetterQueue:
+        Type: SNS
+        TargetArn: !Ref DeadLetterTopic
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 180
+        MaximumRetryAttempts: 0
+      Tags:
+        managed_by: "CloudFormation"
+        application: !Ref AppName
+
+
+Outputs:
+  ApplicationBaseUrl:
+    Description: "API Gateway endpoint URL for the application backend"
+    Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/"
+  StripeWebhookEndpointUrl:
+    Description: |
+      Endpoint URL to use on your Stripe webhook configuration.
+      More info at: https://stripe.com/docs/webhooks
+    Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/stripe/checkout"
