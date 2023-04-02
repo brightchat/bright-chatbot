@@ -4,7 +4,7 @@ from twilio.rest import Client
 from twilio.request_validator import RequestValidator
 
 from bright_chatbot.providers.base_provider import BaseProvider
-from bright_chatbot.configs.settings import ProjectSettings
+from bright_chatbot.configs import settings
 from bright_chatbot import models
 from bright_chatbot.utils.exceptions import ValidationError
 
@@ -58,7 +58,7 @@ class TwilioProvider(BaseProvider):
         return {
             "body": message.body,
             "media_url": message.media_url,
-            "from_": ProjectSettings.TWILIO_PHONE_NUMBER,
+            "from_": settings.TWILIO_PHONE_NUMBER,
             "to": message.to_user.user_id,
         }
 

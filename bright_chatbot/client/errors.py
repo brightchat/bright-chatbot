@@ -28,3 +28,11 @@ MAX_ACTIVE_SESSIONS_SURPASSED = ApplicationError(
     ),
     status_code=503,
 )
+
+IMAGE_GENERATION_QUOTA_SURPASSED = ApplicationError(
+    message=(
+        "You have reached the maximum number of images you can generate for this session.\n"
+        "Increase your image quota at https://brightbot.chat/."
+    ),
+    status_code=429,
+)

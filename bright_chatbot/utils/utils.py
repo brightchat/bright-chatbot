@@ -6,9 +6,9 @@ import pytz
 
 
 def hash_user_id(user_id: str) -> str:
-    from bright_chatbot.configs import ProjectSettings
+    from bright_chatbot.configs import settings
 
-    crypto_salt = ProjectSettings.SECRET_KEY
+    crypto_salt = settings.SECRET_KEY
     hashed = hashlib.sha256((user_id + crypto_salt).encode()).hexdigest()
     return hashed
 

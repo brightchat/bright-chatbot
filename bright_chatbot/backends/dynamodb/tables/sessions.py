@@ -3,7 +3,7 @@ import os
 from typing import Any, Dict, List
 
 from bright_chatbot.backends.dynamodb.tables.base import BaseTableController
-from bright_chatbot.configs.settings import ProjectSettings
+from bright_chatbot.configs import settings
 from bright_chatbot.utils import get_utc_timestamp_now
 
 
@@ -20,7 +20,7 @@ class SessionsTableController(BaseTableController):
 
     @property
     def session_expiration_hours(self) -> float:
-        return ProjectSettings.MAX_SESSION_DURATION_MINUTES / 60
+        return settings.MAX_SESSION_DURATION_MINUTES / 60
 
     def get_user_sessions(
         self,

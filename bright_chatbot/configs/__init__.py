@@ -1,1 +1,3 @@
-from .settings import ProjectSettings
+from ._settings import Settings
+
+settings = Settings()
