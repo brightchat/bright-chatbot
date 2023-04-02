@@ -37,6 +37,10 @@ class ChatHistory(BaseModel):
                 "content": sess_status_prompt,
             },
         ]
+        if settings.EXTRA_CONTENT_SYSTEM_PROMPT:
+            chat_history_repr.append(
+                {"role": "system", "content": settings.EXTRA_CONTENT_SYSTEM_PROMPT}
+            )
         system_prompt_counter = 10
         system_prompt_seq_repetition = 10
         for message in self.messages:
