@@ -2,7 +2,7 @@ import abc
 from typing import List, Union
 
 from bright_chatbot.models import User, UserSession, MessagePrompt, MessageResponse
-from bright_chatbot.configs import ProjectSettings
+from bright_chatbot.configs import settings
 
 
 class BaseDataBackend(abc.ABC):
@@ -16,7 +16,7 @@ class BaseDataBackend(abc.ABC):
 
     @abc.abstractmethod
     def create_user_session(
-        self, user: User, sess_quota: int = ProjectSettings.MAX_REQUESTS_PER_SESSION
+        self, user: User, sess_quota: int = settings.MAX_REQUESTS_PER_SESSION
     ) -> UserSession:
         """
         Creates a new session for an user.

@@ -4,7 +4,7 @@ from typing import List, Dict, Union, Type
 
 from pydantic import BaseModel
 
-from bright_chatbot.configs import ProjectSettings
+from bright_chatbot.configs import settings
 from bright_chatbot.models.user import UserSession
 from bright_chatbot.models.message import MessagePrompt, MessageResponse
 from bright_chatbot.backends.base_backend import BaseDataBackend
@@ -67,7 +67,7 @@ class ChatHistory(BaseModel):
         """
         Returns the system prompt for the chat completion
         """
-        chat_system_role_prompt = ProjectSettings.CHAT_SYSTEM_ROLE_PROMPT
+        chat_system_role_prompt = settings.CHAT_SYSTEM_ROLE_PROMPT
         return chat_system_role_prompt
 
     def _get_sess_status_prompt(self) -> str:
@@ -75,7 +75,7 @@ class ChatHistory(BaseModel):
         Returns the prompt with the status of the session
         at the beginning of the chat
         """
-        session_status_prompt: str = ProjectSettings.SESSION_STATUS_PROMPT
+        session_status_prompt: str = settings.SESSION_STATUS_PROMPT
         session_start = self.session.session_start
         return session_status_prompt.format(
             week_day=session_start.strftime("%A"),
@@ -87,3 +87,13 @@ class ChatHistory(BaseModel):
             second=session_start.second,
             session_quota=self.session.session_quota,
         ).strip()
+
+    def get_chat_responses(self) -> List[MessageResponse]:
+        return list(filter(lambda x: isinstance(x, MessageResponse), self.messages))
+
+    def get_chat_prompts(self) -> List[MessagePrompt]:
+        return list(filter(lambda x: isinstance(x, MessagePrompt), self.messages))
+
+    def get_image_generation_responses(self) -> List[MessageResponse]:
+        responses = self.get_chat_responses()
+        return list(filter(lambda x: x.media_url, responses))

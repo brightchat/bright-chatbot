@@ -9,9 +9,8 @@ from bright_chatbot.utils.functional import classproperty
 class BaseSettings(abc.ABC):
     SETTINGS_PREFIX = "OPENAI_MOBILE"
 
-    @classmethod
     def get(
-        cls,
+        self,
         name: str,
         default: str = None,
         required: bool = False,
@@ -29,7 +28,7 @@ class BaseSettings(abc.ABC):
 
         :return: str
         """
-        var_name = f"{cls.SETTINGS_PREFIX}_{name}"
+        var_name = f"{self.SETTINGS_PREFIX}_{name}"
         value = environ.get(
             var_name, environ.get(name, default) if accept_plain_name else default
         )

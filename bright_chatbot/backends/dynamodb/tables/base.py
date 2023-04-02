@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import boto3
 
-from bright_chatbot.configs import ProjectSettings
+from bright_chatbot.configs import settings
 
 
 class BaseTableController(abc.ABC):
@@ -23,7 +23,7 @@ class BaseTableController(abc.ABC):
 
     @property
     def table_name(self) -> str:
-        return f"{ProjectSettings.DYNAMODB_TABLES_PREFIX}{self.TABLE_NAME}"
+        return f"{settings.DYNAMODB_TABLES_PREFIX}{self.TABLE_NAME}"
 
     def scan(self, index_name: str = None, **kwargs) -> Dict[str, Any]:
         if index_name:

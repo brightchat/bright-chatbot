@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from bright_chatbot.configs import ProjectSettings
+from bright_chatbot.configs import settings
 from bright_chatbot.utils import hash_user_id
 
 
@@ -17,7 +17,7 @@ class User(BaseModel):
 
     @property
     def is_admin(self) -> bool:
-        return self.user_id in ProjectSettings.ADMIN_USERS
+        return self.user_id in settings.ADMIN_USERS
 
     @property
     def hashed_user_id(self) -> str:
@@ -33,4 +33,4 @@ class UserSession(BaseModel):
     session_id: str
     session_start: datetime
     session_end: datetime
-    session_quota: int = ProjectSettings.MAX_REQUESTS_PER_SESSION
+    session_quota: int = settings.MAX_REQUESTS_PER_SESSION

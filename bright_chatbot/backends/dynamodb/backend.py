@@ -5,7 +5,7 @@ from bright_chatbot.models import User, UserSession
 from bright_chatbot.backends.base_backend import BaseDataBackend
 from bright_chatbot.backends.dynamodb._controller import DynamoTablesController
 from bright_chatbot.models.message import MessagePrompt, MessageResponse
-from bright_chatbot.configs import ProjectSettings
+from bright_chatbot.configs import settings
 
 
 class DynamodbBackend(BaseDataBackend):
@@ -38,7 +38,7 @@ class DynamodbBackend(BaseDataBackend):
 
     def create_user_session(self, user: User) -> UserSession:
         session_obj = self.controller.sessions.record_user_session(
-            user.hashed_user_id, messages_quota=ProjectSettings.MAX_REQUESTS_PER_SESSION
+            user.hashed_user_id, messages_quota=settings.MAX_REQUESTS_PER_SESSION
         )
         session_id = session_obj["SessionId"]["S"]
         user_session = UserSession(

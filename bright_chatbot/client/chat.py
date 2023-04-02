@@ -9,9 +9,9 @@ import openai
 from bright_chatbot import services
 from bright_chatbot.backends.base_backend import BaseDataBackend
 from bright_chatbot.providers.base_provider import BaseProvider
-from bright_chatbot.configs.settings import ProjectSettings
+from bright_chatbot.configs import settings
 from bright_chatbot import models
-from bright_chatbot.utils import exceptions as errors
+from bright_chatbot.utils import exceptions
 import bright_chatbot.client.errors as error_msgs
 
 
@@ -22,7 +22,7 @@ class OpenAIChatClient:
         provider: Type[BaseProvider],
         n_threads: int = 5,
     ):
-        openai.api_key = ProjectSettings.OPENAI_API_KEY
+        openai.api_key = settings.OPENAI_API_KEY
         self._logger = logging.getLogger(f"{__package__}.{self.__class__.__name__}")
         self._backend = backend
         self._provider = provider
@@ -30,7 +30,7 @@ class OpenAIChatClient:
         self._responses_generated = []
         self.__futures_queue = []
         self.__thread_pool = ThreadPoolExecutor(
-            max_workers=n_threads if ProjectSettings.USE_MULTI_THREADING else 1
+            max_workers=n_threads if settings.USE_MULTI_THREADING else 1
         )
 
     @property
@@ -56,22 +56,23 @@ class OpenAIChatClient:
         Generates a response to a message prompt and sends it to the user via the
         communication provider.
         """
-        error = None
+        system_error = None
         try:
             self._make_reply(prompt)
-        except errors.SessionLimitError:
-            self._handle_error(prompt, error_msgs.MAX_ACTIVE_SESSIONS_SURPASSED)
-        except errors.SessionQuotaLimitReached:
-            self._handle_error(prompt, error_msgs.QUOTA_SURPASSED)
-        except errors.ModerationError:
-            self._handle_error(prompt, error_msgs.MODERATION_ERROR)
+            self._wait_for_promises()
+        except exceptions.ApplicationError as e:
+            self.logger.exception(
+                f"Got an expected application error when generating the response"
+            )
+            self._handle_error(prompt, e)
         except Exception as e:
-            self.logger.exception("Error while generating response")
-            self._handle_error(prompt, error_msgs.UNEXPECTED_ERROR)
-            error = e
-        self._wait_for_promises()
-        if error and self.logger.level <= logging.DEBUG:
-            raise error
+            self.logger.exception(
+                "We got an unexpected error when generating the response"
+            )
+            self._handle_error(prompt, e)
+            system_error = e
+        if system_error:
+            raise system_error
 
     def _make_reply(self, prompt: models.MessagePrompt) -> models.HandlerOutput:
         """
@@ -90,9 +91,7 @@ class OpenAIChatClient:
         valid_session = self._exec_async(self.validate_session, session=user_session)
         # Raise an error if the message is flagged by the moderation API:
         if self.check_message_moderation(prompt.body):
-            raise errors.ModerationError(
-                "The message given might violate OpenAI's content policy"
-            )
+            error_msgs.MODERATION_ERROR.raise_error()
         # If the message is a command, let the commands handler handle it:
         if prompt.body.startswith("/"):
             cmds_handler = services.ChatCommandsHandler(openai, self)
@@ -181,17 +180,19 @@ class OpenAIChatClient:
         sess_msgs_cnt_prm = self.__thread_pool.submit(
             self.backend.get_count_of_session_prompts, session
         )
-        if sess_cnt_prm.result() > ProjectSettings.MAX_ACTIVE_SESSIONS:
-            raise errors.SessionLimitError(
-                f"Maximum total number of active sessions ({ProjectSettings.MAX_ACTIVE_SESSIONS}) reached"
+        if sess_cnt_prm.result() > settings.MAX_ACTIVE_SESSIONS:
+            self.logger.error(
+                f"Maximum total number of active sessions ({settings.MAX_ACTIVE_SESSIONS}) reached"
             )
+            error_msgs.MAX_ACTIVE_SESSIONS_SURPASSED.raise_error()
         prompts_cnt = sess_msgs_cnt_prm.result()
         self.logger.debug(f"User number of prompts: {prompts_cnt}")
         self.logger.debug(f"User session quota: {session.session_quota}")
         if prompts_cnt > session.session_quota:
-            raise errors.SessionQuotaLimitReached(
+            self.logger.error(
                 f"Maximum number of prompts allowed in this session ({session.session_quota}) has been reached"
             )
+            error_msgs.QUOTA_SURPASSED.raise_error()
         return None
 
     def check_message_moderation(self, message: str) -> None:
@@ -224,16 +225,16 @@ class OpenAIChatClient:
         if errors:
             raise errors[0]
 
-    def _handle_error(
-        self, prompt: models.MessagePrompt, error: models.ApplicationError
-    ) -> None:
+    def _handle_error(self, prompt: models.MessagePrompt, error: Exception) -> None:
         """
         Handles a ModerationError by sending a message to the user
         to inform them that their message was flagged.
         """
+        if not isinstance(error, exceptions.ApplicationError):
+            error = error_msgs.UNEXPECTED_ERROR.exception
         if error.status_code >= 500:
             self.logger.error(
-                f"An error '{models.ApplicationError}' occurred while generating a response for the message: '{models.MessagePrompt}'"
+                f"An error '{error}' occurred while generating a response for the message: '{prompt}'"
             )
         self.send_response(
             models.MessageResponse(
