@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+import logging
 from typing import List
 
 from bright_chatbot import models
@@ -46,3 +47,7 @@ class BaseProvider(abc.ABC):
             message.body = message.body[split_index:]
         messages.append(message)
         return messages
+
+    @property
+    def logger(self):
+        return logging.getLogger(f"bright_chatbot.providers.{self.__class__.__name__}")

@@ -8,15 +8,12 @@ Parameters:
     Type: String
     Default: bright-chatbot
     Description: Name of the Application
-  TwilioAuhToken:
+  WhatsAppBusinessAuthToken:
     Type: String
-    Description: Token used to authenticate to the Twilio API
-  TwilioAccountSID:
+    Description: Auth token for the WhatsApp Business API
+  WhatsAppBusinessFromPhoneNumber:
     Type: String
-    Description: Account SID used to authenticate to the Twilio API
-  TwilioPhoneNumber:
-    Type: String
-    Description: "Twilio registered phone number associated with the account used. eg: 'whatsapp:+12345678901'"
+    Description: Phone number associated with your WhatsApp Business API account
   AdminEmail:
     Type: String
     Description: Email address of the application's admin user for notifications.
@@ -232,20 +229,17 @@ Resources:
                   application/json: "{\"statusCode\": 200}"
                 passthroughBehavior: "when_no_match"
                 type: "mock"
-          /twilio/message:
+          /message:
             post:
               consumes:
-              - "application/x-www-form-urlencoded"
+              - "application/json"
               produces:
-              - "application/xml"
+              - "application/json"
               responses:
                 "200":
                   description: "200 response"
                   schema:
                     $ref: "#/definitions/Empty"
-                  headers:
-                    Content-Type:
-                      type: "string"
               x-amazon-apigateway-integration:
                 credentials: !GetAtt BackendApiIamRole.Arn
                 httpMethod: "POST"
@@ -253,11 +247,8 @@ Resources:
                 responses:
                   default:
                     statusCode: "200"
-                    responseTemplates:
-                      application/xml: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response/>"
-                    contentHandling: "CONVERT_TO_TEXT"
                 requestParameters:
-                  integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+                  integration.request.header.Content-Type: "'application/json'"
                 passthroughBehavior: "never"
                 type: "aws_proxy"
                 uri: !Sub
@@ -364,9 +355,8 @@ Resources:
       ReservedConcurrentExecutions: 10
       Environment:
         Variables:
-          TWILIO_AUTH_TOKEN: !Ref TwilioAuhToken
-          TWILIO_ACCOUNT_SID: !Ref TwilioAccountSID
-          TWILIO_PHONE_NUMBER: !Ref TwilioPhoneNumber
+          WHATSAPP_BUSINESS_AUTH_TOKEN: !Ref WhatsAppBusinessAuthToken
+          WHATSAPP_BUSINESS_FROM_PHONE_NUMBER: !Ref WhatsAppBusinessFromPhoneNumber
           OPENAI_API_KEY: !Ref OpenAIAPIKey
           LAMBDA_LOG_LEVEL: !Ref LambdaLogLevel
           APP_NAME: !Ref AppName
@@ -394,8 +384,7 @@ Outputs:
   ApplicationBaseUrl:
     Description: "API Gateway endpoint URL for the application backend"
     Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/"
-  TwilioEndpointUrl:
+  MessagesEndpointUrl:
     Description: |
-      Endpoint URL to use on your Twilio Sandbox for Whatsapp.
-      More info at: https://www.twilio.com/docs/whatsapp/sandbox
-    Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/twilio/message"
+      Endpoint URL to use on the events API to submit user messages to the bot.
+    Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/message"

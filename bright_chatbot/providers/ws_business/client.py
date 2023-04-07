@@ -17,7 +17,7 @@ class WhatsAppBusinessClient:
 
     @property
     def url_endpoint(self):
-        return f"https://graph.facebook.com/v16.0/${self.from_phone_number}/messages"
+        return f"https://graph.facebook.com/v16.0/{self.from_phone_number}/messages"
 
     def get_request_headers(self) -> Dict[str, str]:
         return {
@@ -49,4 +49,5 @@ class WhatsAppBusinessClient:
             self.url_endpoint, json=data, headers=self.get_request_headers()
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        return result
