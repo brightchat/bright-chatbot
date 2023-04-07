@@ -62,6 +62,10 @@ class DynamoSessionAuthBackend(DynamodbBackend):
             f"Set image generation quota to {settings.MAX_IMAGE_REQUESTS_PER_SESSION} "
             f"and image size to {settings.IMAGE_GENERATION_SIZE}"
         )
+        settings.EXTRA_CONTENT_SYSTEM_PROMPT = (
+            f"The user is on the '{plan.name}' Suscription Plan of the service."
+            f"With a quota of {plan.messages_quota} messages and {plan.image_generation_quota} image generations per day."
+        )
 
     def _img_generation_used_quota(self, user_conversation: list) -> int:
         """
@@ -79,9 +83,14 @@ class DynamoSessionAuthBackend(DynamodbBackend):
                 "BrightBot Standard",
                 "Standard Plan",
                 "Standard Test Plan",
+                BrightBotPlans.StandardPlan.id,
             ):
                 plan = BrightBotPlans.StandardPlan
-            elif user_subscription in ("BrightBot Unlimited", "Premium Plan"):
+            elif user_subscription in (
+                "BrightBot Unlimited",
+                "Premium Plan",
+                BrightBotPlans.PremiumPlan.id,
+            ):
                 plan = BrightBotPlans.PremiumPlan
         else:
             logging.getLogger("bright_chatbot").debug(

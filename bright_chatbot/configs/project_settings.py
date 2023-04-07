@@ -195,3 +195,11 @@ class ProjectSettings(BaseSettings):
         if not session_status_prompt:
             session_status_prompt = prompts.SESSION_STATUS_PROMPT
         return session_status_prompt
+
+    @property
+    def EXTRA_CONTENT_SYSTEM_PROMPT(self) -> str:
+        """
+        Extra message template to add as prompt to the session's system
+        content.
+        """
+        return self.get("EXTRA_CONTENT_SYSTEM_PROMPT")
