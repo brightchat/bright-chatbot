@@ -66,7 +66,7 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         to_user=user,
     )
     provider = TwilioProvider()
-    provider.send_message(msg_response)
+    provider.send_response(msg_response)
     return {
         "isBase64Encoded": False,
         "statusCode": 200,

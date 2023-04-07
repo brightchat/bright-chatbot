@@ -158,6 +158,22 @@ class ProjectSettings(BaseSettings):
         """
         return self.get("TWILIO_CALLBACK_URL", accept_plain_name=True)
 
+    # === WhatApp Business Provider Settings ===
+
+    @property
+    def WHATSAPP_BUSINESS_FROM_PHONE_NUMBER(self) -> str:
+        """
+        Phone number of the Twilio account used to send messages.
+        """
+        return self.get("WHATSAPP_BUSINESS_FROM_PHONE_NUMBER", accept_plain_name=True)
+
+    @property
+    def WHATSAPP_BUSINESS_AUTH_TOKEN(self) -> str:
+        """
+        Phone number of the Twilio account used to send messages.
+        """
+        return self.get("WHATSAPP_BUSINESS_AUTH_TOKEN", accept_plain_name=True)
+
     # === Message Templates ===
     @property
     def CHAT_SYSTEM_ROLE_PROMPT(self) -> str:

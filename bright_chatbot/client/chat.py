@@ -133,7 +133,7 @@ class OpenAIChatClient:
         Sends a message to the user via the communication provider assynchronously.
         """
         self._responses_generated.append(message)
-        self._exec_async(self.provider.send_message, message)
+        self._exec_async(self.provider.send_response, message)
 
     def save_response(
         self, message: models.MessageResponse, user_session: models.UserSession
