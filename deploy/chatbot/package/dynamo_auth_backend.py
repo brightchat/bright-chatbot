@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+from typing import Literal, Union
 
 from bright_chatbot.backends import DynamodbBackend
 from bright_chatbot.models import User, UserSession
@@ -27,12 +28,14 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         stripe.api_key = os.environ["STRIPE_API_KEY"]
 
     def create_user_session(self, user: User) -> UserSession:
-        day_conversation = self._get_user_day_conversation(user)
-        user_subscription_plan = self._get_user_subscription_plan(user)
-        used_quota = self._get_user_used_quota(day_conversation)
-        img_generation_used_quota = self._img_generation_used_quota(day_conversation)
-        session_quota = user_subscription_plan.messages_quota - used_quota
-        self._config_package_by_plan(user_subscription_plan, img_generation_used_quota)
+        user_plan = self._get_user_subscription_plan(user)
+        user_conversation = self._get_user_conversation(
+            user, period=user_plan.quota_reset_period
+        )
+        used_quota = self._count_user_msgs_in_convo(user_conversation)
+        img_generation_used_quota = self._count_images_in_convo(user_conversation)
+        session_quota = user_plan.messages_quota - used_quota
+        self._config_package_by_plan(user_plan, img_generation_used_quota)
         session_obj = self.controller.sessions.record_user_session(
             user.hashed_user_id, messages_quota=session_quota
         )
@@ -64,12 +67,14 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         )
         settings.EXTRA_CONTENT_SYSTEM_PROMPT = (
             f"The user is on the '{plan.name}' Suscription Plan of the service."
-            f"With a quota of {plan.messages_quota} messages and {plan.image_generation_quota} image generations per day."
+            f"With a maximum quota of {plan.messages_quota} messages and {plan.image_generation_quota} image generations"
         )
+        if plan.quota_reset_period:
+            settings.EXTRA_CONTENT_SYSTEM_PROMPT += f" per {plan.quota_reset_period}"
 
-    def _img_generation_used_quota(self, user_conversation: list) -> int:
+    def _count_images_in_convo(self, user_conversation: list) -> int:
         """
-        Gets the number of images the user has generated today
+        Gets the number of images the user has generated in the conversation.
         """
         return len(list(filter(lambda x: x["ImageId"]["S"], user_conversation)))
 
@@ -100,18 +105,24 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         logging.getLogger("bright_chatbot").debug(f"Set user plan to: {plan}")
         return plan
 
-    def _get_user_day_conversation(self, user: User) -> list:
-        day_start_date = datetime.now().replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+    def _get_user_conversation(
+        self, user: User, period: str = Union[Literal["day"], None]
+    ) -> list:
+        if period == "day":
+            # Retrieve all messages from the user from the beginning of the day
+            day_start_date = datetime.now().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+        elif not period:
+            day_start_date = None
         user_conversation = self.controller.chats.get_user_chat_messages(
             user_id=user.hashed_user_id, from_date=day_start_date
         )
         return user_conversation
 
-    def _get_user_used_quota(self, user_conversation: list) -> int:
+    def _count_user_msgs_in_convo(self, user_conversation: list) -> int:
         """
-        Gets the number of messages the user has sent today
+        Gets the number of messages the user has sent in the conversation.
         """
         user_msgs = list(
             filter(lambda x: x["ChatAgent"]["S"] == "user", user_conversation)
