@@ -88,9 +88,14 @@ class DynamoSessionAuthBackend(DynamodbBackend):
                 "BrightBot Standard",
                 "Standard Plan",
                 "Standard Test Plan",
+                BrightBotPlans.StandardPlan.id,
             ):
                 plan = BrightBotPlans.StandardPlan
-            elif user_subscription in ("BrightBot Unlimited", "Premium Plan"):
+            elif user_subscription in (
+                "BrightBot Unlimited",
+                "Premium Plan",
+                BrightBotPlans.PremiumPlan.id,
+            ):
                 plan = BrightBotPlans.PremiumPlan
         else:
             logging.getLogger("bright_chatbot").debug(
