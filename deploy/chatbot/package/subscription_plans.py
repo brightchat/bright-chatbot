@@ -5,8 +5,8 @@ BasicPlan = SubscriptionPlan(
     id="basic",
     name="BrightBot Basic",
     description="Basic Free plan for BrightBot",
-    sessions_quota=1,
-    messages_quota=10,
+    sessions_quota=None,
+    messages_quota=20,
     image_generation_quota=1,
     image_resolution_size="small",
 )
@@ -19,6 +19,7 @@ StandardPlan = SubscriptionPlan(
     messages_quota=100,
     image_generation_quota=5,
     image_resolution_size="medium",
+    quota_reset_period="day",
 )
 
 PremiumPlan = SubscriptionPlan(
@@ -29,4 +30,5 @@ PremiumPlan = SubscriptionPlan(
     messages_quota=500,
     image_generation_quota=20,
     image_resolution_size="large",
+    quota_reset_period="day",
 )
