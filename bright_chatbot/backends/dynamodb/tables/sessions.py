@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import os
 from typing import Any, Dict, List
 
@@ -66,7 +67,9 @@ class SessionsTableController(BaseTableController):
         )
         return response["Items"]
 
-    def record_user_session(self, user_id: str, messages_quota: int) -> Dict[str, Any]:
+    def record_user_session(
+        self, user_id: str, messages_quota: int, session_config: Dict[str, Any] = {}
+    ) -> Dict[str, Any]:
         """
         Records a new user session into the Sessions table
         """
@@ -85,6 +88,7 @@ class SessionsTableController(BaseTableController):
                 "NULL": True,
             },
             "MessagesQuota": {"N": str(messages_quota)},
+            "SessionConfig": {"S": json.dumps(session_config)},
             "SessionTTL": {"N": str(ttl)},
         }
         self._put_item(Item=item)

@@ -1,0 +1,18 @@
+Welcome to the chat with BrightBot!
+
+You can start a conversation with our AI chatbot by simply sending a new message.
+
+Want to generate images? Tell BrightBot to use 'Dalia' to generate an image for you or use the command '/img' followed by the prompt.
+
+If you want to end the conversation, you can type '/end' or '/bye'.
+For a list of possible commands, type '/help'.
+
+You have the '{SUBSCRIPTION_PLAN_NAME}' Subscription plan, which lets you send {SUBSCRIPTION_PLAN_MESSAGE_QUOTA} messages {SUBSCRIPTION_PLAN_RESET_PERIOD}
+
+You can upgrade your subscription plan at https://brightbot.chat/.
+
+Want to send more messages for free? Invite your friends to use BrightBot!
+If they send a message with your refferal link {REFFERAL_LINK}, both of you will get a free 15 days subscription!
+More info at https://brightbot.chat/faq
+
+Have fun!

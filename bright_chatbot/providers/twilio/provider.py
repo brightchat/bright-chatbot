@@ -10,8 +10,6 @@ from bright_chatbot.utils.exceptions import ValidationError
 
 
 class TwilioProvider(BaseProvider):
-    MSG_LENGTH_LIMIT = 1250
-
     def __init__(self, **twilio_client_kwargs):
         self._client = Client(**twilio_client_kwargs)
 
@@ -23,33 +21,8 @@ class TwilioProvider(BaseProvider):
         return self._client
 
     def send_message(self, message: models.MessageResponse):
-        for msg in self._split_message(message):
-            parsed_msg = self._parse_message(msg)
-            self.client.messages.create(**parsed_msg)
-
-    def _split_message(
-        self, message: models.MessageResponse
-    ) -> List[models.MessageResponse]:
-        """
-        Splits a message into multiple messages if it's too long.
-        Attempts to split the message at the last line break before the limit.
-        """
-        if len(message.body) <= self.MSG_LENGTH_LIMIT:
-            return [message]
-        messages = []
-        while len(message.body) > self.MSG_LENGTH_LIMIT:
-            split_index = message.body.rfind("\n", 0, self.MSG_LENGTH_LIMIT)
-            if split_index == -1:
-                split_index = self.MSG_LENGTH_LIMIT
-            messages.append(
-                models.MessageResponse(
-                    body=message.body[:split_index],
-                    **message.dict(exclude={"body"}),
-                )
-            )
-            message.body = message.body[split_index:]
-        messages.append(message)
-        return messages
+        parsed_msg = self._parse_message(message)
+        self.client.messages.create(**parsed_msg)
 
     def _parse_message(self, message: models.MessageResponse) -> Dict[str, str]:
         """

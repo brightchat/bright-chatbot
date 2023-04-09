@@ -158,6 +158,36 @@ class ProjectSettings(BaseSettings):
         """
         return self.get("TWILIO_CALLBACK_URL", accept_plain_name=True)
 
+    # === WhatApp Business Provider Settings ===
+
+    @property
+    def WHATSAPP_BUSINESS_PHONE_NUMBER_ID(self) -> str:
+        """
+        Phone number Id of the WhatsApp Business account used to send messages.
+        """
+        return self.get("WHATSAPP_BUSINESS_PHONE_NUMBER_ID", accept_plain_name=True)
+
+    @property
+    def WHATSAPP_BUSINESS_AUTH_TOKEN(self) -> str:
+        """
+        Authentication Token of the WhatsApp Business account.
+        """
+        return self.get("WHATSAPP_BUSINESS_AUTH_TOKEN", accept_plain_name=True)
+
+    @property
+    def WHATSAPP_BUSINESS_FROM_PHONE_NUMBER(self) -> str:
+        """
+        Phone number of the Twilio account used to send messages.
+        """
+        return self.get("WHATSAPP_BUSINESS_FROM_PHONE_NUMBER", accept_plain_name=True)
+
+    @property
+    def USER_REFFERAL_LINK(self) -> str:
+        """
+        User's refferal link
+        """
+        return self.get("USER_REFFERAL_LINK", "https://brightbot.chat/")
+
     # === Message Templates ===
     @property
     def CHAT_SYSTEM_ROLE_PROMPT(self) -> str:
@@ -187,3 +217,14 @@ class ProjectSettings(BaseSettings):
         content.
         """
         return self.get("EXTRA_CONTENT_SYSTEM_PROMPT")
+
+    @property
+    def USER_WELCOME_MESSAGE(self) -> str:
+        """
+        Message template used as the welcome message for the user
+        when it sends their first message to the chatbot.
+        """
+        user_welcome_message = self.get("USER_WELCOME_MESSAGE")
+        if not user_welcome_message:
+            user_welcome_message = prompts.USER_WELCOME_MESSAGE
+        return user_welcome_message

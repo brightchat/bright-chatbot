@@ -19,6 +19,18 @@ According to the User's subscription plan, they can send not more than {session_
 Users can upgrade their subscription plan to send more messages at any time by going to https://brightbot.chat/
 """
 
+USER_WELCOME_MESSAGE = """
+Welcome to the BrightBot Chat!
+You can start a conversation with the AI chatbot by simply sending a message.
+
+If you want to end the conversation, you can type '/end' or '/bye'.
+For a list of possible commands, type '/help'.
+
+Need more help? Visit https://brightbot.chat/
+
+Have fun!
+"""
+
 
 def get_session_status_system_prompt(
     session_start: datetime, session_quota: int

@@ -7,10 +7,7 @@ from dynamo_auth_backend import DynamoSessionAuthBackend
 
 from bright_chatbot.client import OpenAIChatClient
 from bright_chatbot.models import MessagePrompt, User
-from bright_chatbot.providers.twilio import TwilioProvider
-from bright_chatbot.utils.exceptions import ValidationError
-
-from request_parser import parse_event_body
+from bright_chatbot.providers.ws_business.provider import WhatsAppBusinessProvider
 
 xray_recorder = None
 try:
@@ -32,32 +29,17 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     logger = init_logger()
     if logger.level < 30:
         print(f"Received event:\n{json.dumps(event)}")
-    # Parse event body:
-    parsed_body = parse_event_body(event)
-    # Verify signature:
-    try:
-        verify_request_auth(parsed_body)
-    except ValidationError:
-        return {
-            "isBase64Encoded": False,
-            "statusCode": 401,
-            "headers": {
-                "Content-Type": "application/json",
-            },
-            "body": json.dumps(
-                {"error": "Unauthorized", "message": "Invalid signature"}
-            ),
-        }
+    # Parse event:
+    body = json.loads(event["body"])
     # Initiate provider and backend:
-    provider = TwilioProvider()
+    provider = WhatsAppBusinessProvider()
     backend = DynamoSessionAuthBackend()
     # Initiate client
     client = OpenAIChatClient(provider=provider, backend=backend)
     # Create User message prompt:
-    message_event = parsed_body["params"]
-    user = User(user_id=message_event["From"])
+    user = User(user_id=body["sender"])
     message_prompt = MessagePrompt(
-        body=message_event["Body"],
+        body=body["message"],
         from_user=user,
     )
     # Record the User Id with X-ray using a new subsegment
@@ -80,16 +62,3 @@ def init_logger() -> logging.Logger:
     logger = logging.getLogger("bright_chatbot")
     logger.setLevel(os.environ.get("LAMBDA_LOG_LEVEL", "WARNING"))
     return logger
-
-
-def verify_request_auth(parsed_body: Dict[str, Any]):
-    """
-    Verifies that the request is actually coming from Twillio
-    """
-    callback_url = parsed_body["callback_url"]
-    params = parsed_body["params"]
-    headers = parsed_body["headers"]
-    signature = headers["X-Twilio-Signature"]
-    TwilioProvider().verify_signature(
-        callback_url, params, signature, raise_on_failure=True
-    )

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -24,6 +25,13 @@ class User(BaseModel):
         return hash_user_id(self.user_id)
 
 
+class UserSessionConfig(BaseModel):
+    max_image_requests: Optional[int] = settings.MAX_IMAGE_REQUESTS_PER_SESSION
+    image_generation_size: Optional[str] = settings.IMAGE_GENERATION_SIZE
+    extra_content_system_prompt: Optional[str] = settings.EXTRA_CONTENT_SYSTEM_PROMPT
+    user_refferal_link: Optional[str] = settings.USER_REFFERAL_LINK
+
+
 class UserSession(BaseModel):
     """
     Model that stores information about a user session.
@@ -34,3 +42,4 @@ class UserSession(BaseModel):
     session_start: datetime
     session_end: datetime
     session_quota: int = settings.MAX_REQUESTS_PER_SESSION
+    session_config: UserSessionConfig = UserSessionConfig()

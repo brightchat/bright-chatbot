@@ -22,10 +22,16 @@ class ImageGenerationHandler(OpenAITaskBaseHandler):
         communication provider.
         """
         self.logger.info(f"Generating an image from user prompt: '{prompt}'")
-        if not self._check_img_generation_quota():
+        if not self._check_img_generation_quota(
+            quota=user_session.session_config.max_image_requests
+        ):
             self.logger.info("User has reached the quota of image generation requests")
             errors.IMAGE_GENERATION_QUOTA_SURPASSED.raise_error()
-        image_url = self._generate_image(image_prompt, prompt)
+        image_url = self._generate_image(
+            image_prompt,
+            prompt,
+            img_size=user_session.session_config.image_generation_size,
+        )
         response = models.MessageResponse(
             body=image_prompt, media_url=image_url, to_user=prompt.from_user
         )
@@ -38,23 +44,30 @@ class ImageGenerationHandler(OpenAITaskBaseHandler):
         self.logger.info(f"Image generated with output: '{output}'")
         return output
 
-    def _check_img_generation_quota(self) -> bool:
+    def _check_img_generation_quota(
+        self, quota: int = settings.MAX_IMAGE_REQUESTS_PER_SESSION
+    ) -> bool:
         """
         Checks if the user has reached the quota of image generation requests.
         Returns True if the user has not reached the quota, False otherwise.
         """
         images_generated = self.client.chat_history.get_image_generation_responses()
-        if len(images_generated) >= settings.MAX_IMAGE_REQUESTS_PER_SESSION:
+        if len(images_generated) >= quota:
             return False
         return True
 
-    def _generate_image(self, img_prompt: str, prompt: models.MessagePrompt) -> str:
+    def _generate_image(
+        self,
+        img_prompt: str,
+        prompt: models.MessagePrompt,
+        img_size: Literal["small", "medium", "large"] = settings.IMAGE_GENERATION_SIZE,
+    ) -> str:
         """
         Generates an image using the OpenAI Image Generation Model (Dall-E)
         """
         image_resp = self.openai.Image.create(
             prompt=img_prompt,
-            size=self.get_image_dimmensions(settings.IMAGE_GENERATION_SIZE),
+            size=self.get_image_dimmensions(img_size),
             n=1,
             response_format="url",
             user=prompt.from_user.hashed_user_id,
