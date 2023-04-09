@@ -72,7 +72,7 @@ class DynamodbBackend(BaseDataBackend):
         return self.controller.sessions.count_active_sessions()
 
     def get_count_of_session_prompts(self, session: UserSession) -> int:
-        user_chat_messages = self.controller.chats.get_user_chat_session(
+        user_chat_messages = self.controller.chat_messages.get_user_chat_session(
             session_id=session.session_id
         )
         return len(
@@ -82,7 +82,7 @@ class DynamodbBackend(BaseDataBackend):
     def get_session_chat_history(
         self, session: UserSession
     ) -> List[Union[MessagePrompt, MessageResponse]]:
-        user_chat_messages = self.controller.chats.get_user_chat_session(
+        user_chat_messages = self.controller.chat_messages.get_user_chat_session(
             session_id=session.session_id
         )
         chat_history = []
@@ -118,6 +118,12 @@ class DynamodbBackend(BaseDataBackend):
         self.controller.chats.record_chat_message(
             session_id=session.session_id,
             user_id=session.user.hashed_user_id,
+            timestamp_created=message.created_at.timestamp(),
+            agent="user",
+        )
+        self.controller.chat_messages.record_chat_message(
+            session_id=session.session_id,
+            session_ttl=session.session_end.timestamp(),
             message=message.body,
             timestamp_created=message.created_at.timestamp(),
             agent="user",
@@ -140,6 +146,13 @@ class DynamodbBackend(BaseDataBackend):
         self.controller.chats.record_chat_message(
             session_id=session.session_id,
             user_id=session.user.hashed_user_id,
+            timestamp_created=message.created_at.timestamp(),
+            agent="assistant",
+            image_id=image_id,
+        )
+        self.controller.chat_messages.record_chat_message(
+            session_id=session.session_id,
+            session_ttl=session.session_end.timestamp(),
             message=message.body,
             timestamp_created=message.created_at.timestamp(),
             agent="assistant",

@@ -47,7 +47,10 @@ that the session is active using a TTL property `SessionTTL`.
 | Property | Description | Type | Is PK | Is SK |
 | -------- | ----------- | ---- | ----- | ----- |
 | SessionId | Identifier of the session | Text (UserId + ":" + TimestampCreated) | Yes | No
+| Message | Message sent in the chat during the respective session | Text (Max 500 chars) | No | No
 | TimestampCreated | UNIX Timestamp for when the message was created by either the bot or the user | Numeric | No | Yes
+| ChatAgent | Agent that sent the message. Can be either `assistant` (Our bot) or `user` | Text (Enum) | No | No
+| ImageId | When response contains an image, unique identifier of the image in the `ImageResponses` table | Text (SHA256 from `image_b64`) | No | No
 | SessionTTL | UNIX Timestamp denoting the time when the session will expire (Around 3 hours after session creation) | Numeric | No | No
 
 > `SessionTTL` is a TimeToLive property that specifies date and time when the item in the table will expire (See [DynamoDB TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) for more information).
