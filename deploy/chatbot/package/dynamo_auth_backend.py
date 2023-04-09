@@ -14,7 +14,7 @@ import stripe
 
 import subscription_plans as BrightBotPlans
 from models.subscription_plan import SubscriptionPlan
-from tables.refferal_codes import UsersRefferalCodesTableController
+from tables.referral_codes import UsersReferralCodesTableController
 
 
 class DynamoSessionAuthBackend(DynamodbBackend):
@@ -67,10 +67,10 @@ class DynamoSessionAuthBackend(DynamodbBackend):
             f"With a maximum quota of {plan.messages_quota} messages and {plan.image_generation_quota} image generations"
         )
         extra_content_system_prompt += plan.quota_reset_period_text
-        # Get user's refferal link:
-        refferal_link = self._get_user_refferal_link(user)
+        # Get user's referral link:
+        referral_link = self._get_user_referral_link(user)
         # Set the user welcome message:
-        settings.USER_WELCOME_MESSAGE = plan.get_welcome_message(refferal_link)
+        settings.USER_WELCOME_MESSAGE = plan.get_welcome_message(referral_link)
         # Create the user's session config:
         session_config = UserSessionConfig(
             max_image_requests=(
@@ -80,7 +80,7 @@ class DynamoSessionAuthBackend(DynamodbBackend):
             ),
             image_generation_size=plan.image_resolution_size,
             extra_content_system_prompt=extra_content_system_prompt,
-            user_refferal_link=refferal_link,
+            user_referral_link=referral_link,
         )
         logging.getLogger("bright_chatbot").debug(
             f"Set user session config to '{session_config.dict()}'"
@@ -94,25 +94,25 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         url = f"https://wa.me/{phone_number}?text={code_text_url}"
         return url
 
-    def __get_or_create_refferal_code(self, user: User) -> Tuple[str, bool]:
-        refferal_table = UsersRefferalCodesTableController(
+    def __get_or_create_referral_code(self, user: User) -> Tuple[str, bool]:
+        referral_table = UsersReferralCodesTableController(
             client=self.controller.client
         )
         created = False
-        refferal_code = refferal_table.get_user_refferal_code(user.user_id)
-        if not refferal_code:
+        referral_code = referral_table.get_user_referral_code(user.user_id)
+        if not referral_code:
             while not created:
-                refferal_code = self.__generate_refferal_code()
+                referral_code = self.__generate_referral_code()
                 try:
-                    refferal_table.record_user_refferal_code(
-                        user.user_id, refferal_code
+                    referral_table.record_user_referral_code(
+                        user.user_id, referral_code
                     )
                 except ValueError:
                     continue
                 created = True
-        return refferal_code, created
+        return referral_code, created
 
-    def __generate_refferal_code(self) -> str:
+    def __generate_referral_code(self) -> str:
         """
         Generates a random code of 5 characters
         """
@@ -194,21 +194,34 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         return subscription_data["product_name"]
 
     def _get_active_stripe_customers(self) -> pd.DataFrame:
+        """
+        Retrieves all customers in Stripe that are considered active.
+        ie. Those that have an active subscription or are in trial.
+        """
         active_subscriptions = stripe.Subscription.list(status="active")
+        trial_subscriptions = stripe.Subscription.list(status="trialing")
         active_subscriptions_df = pd.DataFrame(active_subscriptions["data"])
+        trial_subscriptions_df = pd.DataFrame(trial_subscriptions["data"])
+        # Join active and trial subscriptions:
+        active_subscriptions_df = pd.concat(
+            [active_subscriptions_df, trial_subscriptions_df]
+        )
         if active_subscriptions_df.empty:
             return active_subscriptions_df
+        # Retrieve product names:
         active_subscriptions_df["product_id"] = active_subscriptions_df["plan"].apply(
             lambda x: x["product"]
         )
         products = stripe.Product.list(active=True)
         products_df = pd.DataFrame(products["data"])
+        # Merge product names with active subscriptions:
         subscriptions = active_subscriptions_df.merge(
-            products_df[["id", "name"]].rename(
+            products_df[["id", "name", "default_price"]].rename(
                 columns={"name": "product_name", "id": "product_id"}
             ),
             on="product_id",
         ).rename(columns={"customer": "customer_id"})
+        # Retrieve customer emails and phone numbers:
         customers_df = pd.DataFrame(stripe.Customer.list()["data"]).rename(
             columns={
                 "id": "customer_id",
@@ -216,6 +229,7 @@ class DynamoSessionAuthBackend(DynamodbBackend):
                 "phone": "customer_phone",
             }
         )
+        # Merge customers data with active subscriptions:
         active_customers_df = subscriptions.merge(
             customers_df[["customer_id", "customer_email", "customer_phone"]],
             on="customer_id",

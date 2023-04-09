@@ -40,7 +40,7 @@ class SubscriptionPlan(BaseModel):
             quota_reset_period_text = " in total."
         return quota_reset_period_text
 
-    def get_welcome_message(self, refferal_link: str) -> str:
+    def get_welcome_message(self, referral_link: str) -> str:
         welcome_message_file = (
             pathlib.Path(__file__).parent / "user_welcome_msg_template.txt"
         )
@@ -51,6 +51,6 @@ class SubscriptionPlan(BaseModel):
             SUBSCRIPTION_PLAN_NAME=self.name,
             SUBSCRIPTION_PLAN_MESSAGE_QUOTA=self.messages_quota,
             SUBSCRIPTION_PLAN_RESET_PERIOD=self.quota_reset_period_text,
-            REFFERAL_LINK=refferal_link,
+            REFERRAL_LINK=referral_link,
         )
         return welcome_message

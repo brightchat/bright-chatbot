@@ -12,7 +12,7 @@ You have the '{SUBSCRIPTION_PLAN_NAME}' Subscription plan, which lets you send {
 You can upgrade your subscription plan at https://brightbot.chat/.
 
 Want to send more messages for free? Invite your friends to use BrightBot!
-If they send a message with your refferal link {REFFERAL_LINK}, both of you will get a free 15 days subscription!
+If they send a message with your referral link {REFERRAL_LINK}, both of you will get a free 15 days subscription!
 More info at https://brightbot.chat/faq
 
 Have fun!
