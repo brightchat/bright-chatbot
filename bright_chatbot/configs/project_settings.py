@@ -182,11 +182,11 @@ class ProjectSettings(BaseSettings):
         return self.get("WHATSAPP_BUSINESS_FROM_PHONE_NUMBER", accept_plain_name=True)
 
     @property
-    def USER_REFFERAL_LINK(self) -> str:
+    def USER_REFERRAL_LINK(self) -> str:
         """
-        User's refferal link
+        User's referral link
         """
-        return self.get("USER_REFFERAL_LINK", "https://brightbot.chat/")
+        return self.get("USER_REFERRAL_LINK", "https://brightbot.chat/")
 
     # === Message Templates ===
     @property

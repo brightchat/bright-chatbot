@@ -164,27 +164,27 @@ Resources:
         - Key: "Application"
           Value: !Ref AppName
   ## --- Management Tables ---
-  UsersRefferalCodesTable:
+  UsersReferralCodesTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub
-        - "${AppName}-UsersRefferalCodes"
+        - "${AppName}-UsersReferralCodes"
         - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         - AttributeName: "UserPhoneNumber"
           AttributeType: "S"
-        - AttributeName: "RefferalCode"
+        - AttributeName: "ReferralCode"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "UserPhoneNumber"
           KeyType: "HASH"
-        - AttributeName: "RefferalCode"
+        - AttributeName: "ReferralCode"
           KeyType: "RANGE"
       GlobalSecondaryIndexes:
-        - IndexName: "RefferalCodesIndex"
+        - IndexName: "ReferralCodesIndex"
           KeySchema:
-            - AttributeName: "RefferalCode"
+            - AttributeName: "ReferralCode"
               KeyType: "HASH"
           Projection:
             ProjectionType: "KEYS_ONLY"
@@ -253,10 +253,10 @@ Resources:
                   - !Sub
                     - "${Arn}/index/*"
                     - Arn: !GetAtt ImageResponsesTable.Arn
-                  - !GetAtt UsersRefferalCodesTable.Arn
+                  - !GetAtt UsersReferralCodesTable.Arn
                   - !Sub
                     - "${Arn}/index/*"
-                    - Arn: !GetAtt UsersRefferalCodesTable.Arn
+                    - Arn: !GetAtt UsersReferralCodesTable.Arn
               # Allow the lambda function to publish to the SNS Topic
               - Effect: Allow
                 Action: sns:Publish
