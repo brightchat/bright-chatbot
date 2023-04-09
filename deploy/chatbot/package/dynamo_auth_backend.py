@@ -1,16 +1,20 @@
 from datetime import datetime
 import logging
 import os
-from typing import Literal, Union
+import random
+import string
+from typing import Literal, Tuple, Union
+from urllib.parse import quote
 
 from bright_chatbot.backends import DynamodbBackend
-from bright_chatbot.models import User, UserSession
+from bright_chatbot.models import User, UserSession, UserSessionConfig
 from bright_chatbot.configs import settings
 import pandas as pd
 import stripe
 
 import subscription_plans as BrightBotPlans
 from models.subscription_plan import SubscriptionPlan
+from tables.refferal_codes import UsersRefferalCodesTableController
 
 
 class DynamoSessionAuthBackend(DynamodbBackend):
@@ -19,8 +23,6 @@ class DynamoSessionAuthBackend(DynamodbBackend):
     for specific users and users subscriptions (via Stripe).
     It also implements a daily quota for each user depending on
     which subscription they have.
-
-    #TODO: This could be a Mixin
     """
 
     def __init__(self, *args, **kwargs):
@@ -35,9 +37,13 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         used_quota = self._count_user_msgs_in_convo(user_conversation)
         img_generation_used_quota = self._count_images_in_convo(user_conversation)
         session_quota = user_plan.messages_quota - used_quota
-        self._config_package_by_plan(user_plan, img_generation_used_quota)
+        session_config = self._get_session_config(
+            user, user_plan, img_generation_used_quota
+        )
         session_obj = self.controller.sessions.record_user_session(
-            user.hashed_user_id, messages_quota=session_quota
+            user.hashed_user_id,
+            messages_quota=session_quota,
+            session_config=session_config.dict(),
         )
         session_id = session_obj["SessionId"]["S"]
         user_session = UserSession(
@@ -46,31 +52,73 @@ class DynamoSessionAuthBackend(DynamodbBackend):
             session_start=session_obj["TimestampCreated"]["N"],
             session_end=session_obj["SessionTTL"]["N"],
             session_quota=session_quota if not user.is_admin else 10e6,
+            session_config=session_config,
         )
         return user_session
 
-    def _config_package_by_plan(
-        self, plan: SubscriptionPlan, img_used_quota: int
-    ) -> None:
+    def _get_session_config(
+        self, user: User, plan: SubscriptionPlan, img_used_quota: int
+    ) -> UserSessionConfig:
         """
         Configures the number of messages per day for each subscription plan.
         """
-        settings.MAX_IMAGE_REQUESTS_PER_SESSION = (
-            plan.image_generation_quota - img_used_quota
-            if plan.image_generation_quota
-            else None
-        )
-        settings.IMAGE_GENERATION_SIZE = plan.image_resolution_size
-        logging.getLogger("bright_chatbot").debug(
-            f"Set image generation quota to {settings.MAX_IMAGE_REQUESTS_PER_SESSION} "
-            f"and image size to {settings.IMAGE_GENERATION_SIZE}"
-        )
-        settings.EXTRA_CONTENT_SYSTEM_PROMPT = (
+        extra_content_system_prompt = (
             f"The user is on the '{plan.name}' Suscription Plan of the service."
             f"With a maximum quota of {plan.messages_quota} messages and {plan.image_generation_quota} image generations"
         )
-        if plan.quota_reset_period:
-            settings.EXTRA_CONTENT_SYSTEM_PROMPT += f" per {plan.quota_reset_period}"
+        extra_content_system_prompt += plan.quota_reset_period_text
+        # Get user's refferal link:
+        refferal_link = self._get_user_refferal_link(user)
+        # Set the user welcome message:
+        settings.USER_WELCOME_MESSAGE = plan.get_welcome_message(refferal_link)
+        # Create the user's session config:
+        session_config = UserSessionConfig(
+            max_image_requests=(
+                plan.image_generation_quota - img_used_quota
+                if plan.image_generation_quota
+                else None
+            ),
+            image_generation_size=plan.image_resolution_size,
+            extra_content_system_prompt=extra_content_system_prompt,
+            user_refferal_link=refferal_link,
+        )
+        logging.getLogger("bright_chatbot").debug(
+            f"Set user session config to '{session_config.dict()}'"
+        )
+        return session_config
+
+    def _get_user_refferal_link(self, user: User) -> str:
+        refferal_code, _ = self.__get_or_create_refferal_code(user)
+        code_text_url = quote(f"/refferal {refferal_code}")
+        phone_number = settings.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER
+        url = f"https://wa.me/{phone_number}?text={code_text_url}"
+        return url
+
+    def __get_or_create_refferal_code(self, user: User) -> Tuple[str, bool]:
+        refferal_table = UsersRefferalCodesTableController(
+            client=self.controller.client
+        )
+        created = False
+        refferal_code = refferal_table.get_user_refferal_code(user.user_id)
+        if not refferal_code:
+            while not created:
+                refferal_code = self.__generate_refferal_code()
+                try:
+                    refferal_table.record_user_refferal_code(
+                        user.user_id, refferal_code
+                    )
+                except ValueError:
+                    continue
+                created = True
+        return refferal_code, created
+
+    def __generate_refferal_code(self) -> str:
+        """
+        Generates a random code of 5 characters
+        """
+        return "".join(
+            random.choice(string.ascii_uppercase + string.digits) for _ in range(5)
+        )
 
     def _count_images_in_convo(self, user_conversation: list) -> int:
         """

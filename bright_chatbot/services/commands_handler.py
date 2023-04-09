@@ -7,6 +7,7 @@ from bright_chatbot.models import (
     UserSession,
     HandlerOutput,
 )
+from bright_chatbot.configs import settings
 
 
 class ChatCommandsHandler(OpenAITaskBaseHandler):
@@ -32,6 +33,8 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
             output = self._handle_img_cmd(prompt, user_session)
         elif prompt.body == "/help":
             output = self._handle_help_cmd(prompt, user_session)
+        elif prompt.body == "/refferal":
+            output = self._handle_refferal_cmd(prompt, user_session)
         else:
             output = self._handle_not_recognized(prompt, user_session)
         self.logger.info(f"Sent reply to command with output: '{output}'")
@@ -49,6 +52,22 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
             message_prompt=prompt,
             message_response=response,
             requested_features={"generate_image": image_prompt},
+        )
+        return output
+
+    def _handle_refferal_cmd(self, prompt, user_session: UserSession) -> HandlerOutput:
+        """
+        Handles the refferal command.
+        """
+        response = MessageResponse(
+            body=f"Here's a link you can share to refer your friends: {user_session.session_config.user_refferal_link}",
+            to_user=user_session.user,
+        )
+        self.client.send_response(response)
+        self.client.save_response(response, user_session)
+        output = HandlerOutput(
+            message_prompt=prompt,
+            message_response=response,
         )
         return output
 
@@ -79,7 +98,9 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
             body="Here's a list of commands you can use:\n\n"
             "/help - Show this message\n"
             "/reset or /quit - End the chat session\n"
-            "/image <prompt> or /img <prompt> - Generate an image using the given prompt\n",
+            "/image <prompt> or /img <prompt> - Generate an image using the given prompt\n"
+            "/refferal - Get a link to refer your friends\n"
+            "/refferal <code> - Use a refferal code to get a discount\n",
             to_user=user_session.user,
         )
         self.client.send_response(response)

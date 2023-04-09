@@ -31,6 +31,13 @@ class BaseDataBackend(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def does_user_exist(self, user: User) -> bool:
+        """
+        Checks if a user exists in the database.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def get_count_of_active_sessions(self) -> int:
         """
         Returns the total number of active sessions

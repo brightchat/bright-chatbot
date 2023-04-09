@@ -38,6 +38,7 @@ class WhatsAppBusinessProvider(BaseProvider):
         return {
             "phone_number": message.to_user.user_id,
             "message": message.body,
+            "image_url": message.media_url,
         }
 
     def verify_signature(
@@ -61,4 +62,4 @@ class WhatsAppBusinessProvider(BaseProvider):
 
     @classproperty
     def from_phone_number(self) -> str:
-        return settings.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER
+        return settings.WHATSAPP_BUSINESS_PHONE_NUMBER_ID

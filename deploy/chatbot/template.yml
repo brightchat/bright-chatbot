@@ -11,9 +11,12 @@ Parameters:
   WhatsAppBusinessAuthToken:
     Type: String
     Description: Auth token for the WhatsApp Business API
+  WhatsAppBusinessPhoneNumberId:
+    Type: String
+    Description: Phone number Id associated with your WhatsApp Business API account to send messages from.
   WhatsAppBusinessFromPhoneNumber:
     Type: String
-    Description: Phone number associated with your WhatsApp Business API account
+    Description: Phone number associated with your WhatsApp Business API account to send messages from.
   AdminEmail:
     Type: String
     Description: Email address of the application's admin user for notifications.
@@ -64,11 +67,12 @@ Parameters:
     Default: ""
 Resources:
   # === DynamoDB Tables ====
+  ## --- Application Tables ---
   SessionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub
-        - "${AppName}Sessions"
+        - "${AppName}-Sessions"
         - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
@@ -93,7 +97,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub
-        - "${AppName}Chats"
+        - "${AppName}-Chats"
         - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
@@ -109,12 +113,18 @@ Resources:
         - AttributeName: "TimestampCreated"
           KeyType: "RANGE"
       GlobalSecondaryIndexes:
-        - IndexName: "UserIdGlobalIndex"
+        - IndexName: "UserConverationGlobalIndex"
           KeySchema:
             - AttributeName: "UserId"
               KeyType: "HASH"
             - AttributeName: "TimestampCreated"
               KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+        - IndexName: "UsersLastMessageGlobalIndex"
+          KeySchema:
+            - AttributeName: "UserId"
+              KeyType: "HASH"
           Projection:
             ProjectionType: "ALL"
       Tags:
@@ -126,7 +136,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub
-        - "${AppName}ImageResponses"
+        - "${AppName}-ImageResponses"
         - AppName: !Ref AppName
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
@@ -153,113 +163,36 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
-  # ==== API Gateway ====
-  BackendApiIamRole:
-    Type: AWS::IAM::Role
+  ## --- Management Tables ---
+  UsersRefferalCodesTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service:
-                - "apigateway.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Policies:
-        - PolicyName: !Sub
-            - "${AppName}QueueAllowSendMessages"
-            - AppName: !Ref AppName
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              # Allow the API Gateway to invoke the Lambda function
-              - Effect: Allow
-                Action: lambda:InvokeFunction
-                Resource: !GetAtt BackendLambdaFunction.Arn
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:DescribeLogGroups
-                  - logs:DescribeLogStreams
-                  - logs:PutLogEvents
-                  - logs:GetLogEvents
-                  - logs:FilterLogEvents
-                Resource: "*"
+      TableName: !Sub
+        - "${AppName}-UsersRefferalCodes"
+        - AppName: !Ref AppName
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        - AttributeName: "UserPhoneNumber"
+          AttributeType: "S"
+        - AttributeName: "RefferalCode"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "UserPhoneNumber"
+          KeyType: "HASH"
+        - AttributeName: "RefferalCode"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        - IndexName: "RefferalCodesIndex"
+          KeySchema:
+            - AttributeName: "RefferalCode"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
-  DevelopmentBackendApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: api
-      Description: Default stage of the API
-      TracingEnabled: True
-      DefinitionBody:
-        swagger: "2.0"
-        info:
-          description: "Development stage of the API for the application"
-          version: "2022-11-13T12:36:49Z"
-          title: !Sub
-            - "${AppName} BackendApi"
-            - AppName: !Ref AppName
-        basePath: "/"
-        schemes:
-        - "https"
-        paths:
-          /:
-            get:
-              consumes:
-              - "application/json"
-              produces:
-              - "application/json"
-              responses:
-                "200":
-                  description: "200 response"
-                  schema:
-                    $ref: "#/definitions/Empty"
-              x-amazon-apigateway-integration:
-                responses:
-                  default:
-                    statusCode: "200"
-                requestTemplates:
-                  application/json: "{\"statusCode\": 200}"
-                passthroughBehavior: "when_no_match"
-                type: "mock"
-          /message:
-            post:
-              consumes:
-              - "application/json"
-              produces:
-              - "application/json"
-              responses:
-                "200":
-                  description: "200 response"
-                  schema:
-                    $ref: "#/definitions/Empty"
-              x-amazon-apigateway-integration:
-                credentials: !GetAtt BackendApiIamRole.Arn
-                httpMethod: "POST"
-                # Call the Lambda function
-                responses:
-                  default:
-                    statusCode: "200"
-                requestParameters:
-                  integration.request.header.Content-Type: "'application/json'"
-                passthroughBehavior: "never"
-                type: "aws_proxy"
-                uri: !Sub
-                  - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
-                  - LambdaArn: !GetAtt BackendLambdaFunction.Arn
-        definitions:
-          Empty:
-            type: "object"
-      Tags:
-        managed_by: "CloudFormation"
-        application: !Ref AppName
   # === Lambda Function ===
   MessagesQueueDLQ: # Store failed messages in this queue
     Type: AWS::SQS::Queue
@@ -310,21 +243,20 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: dynamodb:*
-                Resource: !GetAtt SessionsTable.Arn
-              - Effect: Allow
-                Action: dynamodb:*
                 Resource:
+                  - !GetAtt SessionsTable.Arn
                   - !GetAtt ChatsTable.Arn
                   - !Sub
                     - "${Arn}/index/*"
                     - Arn: !GetAtt ChatsTable.Arn
-              - Effect: Allow
-                Action: dynamodb:*
-                Resource:
                   - !GetAtt ImageResponsesTable.Arn
                   - !Sub
                     - "${Arn}/index/*"
                     - Arn: !GetAtt ImageResponsesTable.Arn
+                  - !GetAtt UsersRefferalCodesTable.Arn
+                  - !Sub
+                    - "${Arn}/index/*"
+                    - Arn: !GetAtt UsersRefferalCodesTable.Arn
               # Allow the lambda function to publish to the SNS Topic
               - Effect: Allow
                 Action: sns:Publish
@@ -356,7 +288,8 @@ Resources:
       Environment:
         Variables:
           WHATSAPP_BUSINESS_AUTH_TOKEN: !Ref WhatsAppBusinessAuthToken
-          WHATSAPP_BUSINESS_FROM_PHONE_NUMBER: !Ref WhatsAppBusinessFromPhoneNumber
+          WHATSAPP_BUSINESS_PHONE_NUMBER_ID: !Ref WhatsAppBusinessPhoneNumberId
+          WHATSAPP_BUSINESS_FROM_PHONE_NUMBER : !Ref WhatsAppBusinessFromPhoneNumber
           OPENAI_API_KEY: !Ref OpenAIAPIKey
           LAMBDA_LOG_LEVEL: !Ref LambdaLogLevel
           APP_NAME: !Ref AppName
@@ -366,7 +299,7 @@ Resources:
           OPENAI_MOBILE_MAX_SESSIONS_PER_DAY: !Ref SessionsQuotaPerUser
           OPENAI_MOBILE_MAX_REQUESTS_PER_SESSION: !Ref MessagesQuotaPerUserSession
           OPENAI_MOBILE_ADMIN_USERS: !Ref AppAdminUsers
-          OPENAI_MOBILE_DYNAMODB_TABLES_PREFIX: !Ref AppName
+          OPENAI_MOBILE_DYNAMODB_TABLES_PREFIX: !Sub ${AppName}-
           STRIPE_API_KEY: !Ref StripeApiKey
       # Dead letter queue configuration
       DeadLetterQueue:
@@ -381,10 +314,6 @@ Resources:
 
 
 Outputs:
-  ApplicationBaseUrl:
-    Description: "API Gateway endpoint URL for the application backend"
-    Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/"
-  MessagesEndpointUrl:
-    Description: |
-      Endpoint URL to use on the events API to submit user messages to the bot.
-    Value: !Sub "https://${DevelopmentBackendApi}.execute-api.${AWS::Region}.amazonaws.com/api/message"
+  ApplicationLambdaFunctionArn:
+    Description: "ARN of the Lambda Function that handles the messages"
+    Value: !GetAtt BackendLambdaFunction.Arn

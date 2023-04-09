@@ -85,9 +85,27 @@ class ChatsTableController(BaseTableController):
         response = self._query(
             **kwargs,
             recursive=True,
-            IndexName="UserIdGlobalIndex",
+            IndexName="UserConverationGlobalIndex",
         )
         return response["Items"]
+
+    def check_user_has_sent_messages(self, user_id: str) -> bool:
+        """
+        Checks if a user has sent any message to the chat
+        by checking the existance of its id in the table
+        using the UsersLastMessageGlobalIndex
+        """
+        response = self._query(
+            IndexName="UsersLastMessageGlobalIndex",
+            KeyConditionExpression="UserId = :user_id",
+            ExpressionAttributeValues={
+                ":user_id": {
+                    "S": user_id,
+                },
+            },
+            Limit=1,
+        )
+        return bool(response["Items"])
 
     def get_messages_by_image_id(
         self, session_id: str, image_id: str

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from typing import List, Dict, Union
 
 from bright_chatbot.models import User, UserSession
@@ -6,6 +7,7 @@ from bright_chatbot.backends.base_backend import BaseDataBackend
 from bright_chatbot.backends.dynamodb._controller import DynamoTablesController
 from bright_chatbot.models.message import MessagePrompt, MessageResponse
 from bright_chatbot.configs import settings
+from bright_chatbot.models.user import UserSessionConfig
 
 
 class DynamodbBackend(BaseDataBackend):
@@ -33,12 +35,17 @@ class DynamodbBackend(BaseDataBackend):
             session_start=session_obj["TimestampCreated"]["N"],
             session_end=session_obj["SessionTTL"]["N"],
             session_quota=session_obj["MessagesQuota"]["N"],
+            session_config=UserSessionConfig(
+                **json.loads(session_obj["SessionConfig"]["S"])
+            ),
         )
         return user_session
 
     def create_user_session(self, user: User) -> UserSession:
         session_obj = self.controller.sessions.record_user_session(
-            user.hashed_user_id, messages_quota=settings.MAX_REQUESTS_PER_SESSION
+            user.hashed_user_id,
+            messages_quota=settings.MAX_REQUESTS_PER_SESSION,
+            session_config={},  # Use default values
         )
         session_id = session_obj["SessionId"]["S"]
         user_session = UserSession(
@@ -46,6 +53,9 @@ class DynamodbBackend(BaseDataBackend):
             session_id=session_id,
             session_start=session_obj["TimestampCreated"]["N"],
             session_end=session_obj["SessionTTL"]["N"],
+            session_config=UserSessionConfig(
+                **json.loads(session_obj["SessionConfig"]["S"])
+            ),
         )
         return user_session
 
@@ -54,6 +64,9 @@ class DynamodbBackend(BaseDataBackend):
         if not latest_session:
             return
         self.controller.sessions.expire_session(latest_session.session_id)
+
+    def does_user_exist(self, user: User) -> bool:
+        return self.controller.chats.check_user_has_sent_messages(user.hashed_user_id)
 
     def get_count_of_active_sessions(self) -> int:
         return self.controller.sessions.count_active_sessions()

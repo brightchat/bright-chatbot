@@ -84,6 +84,16 @@ class OpenAIChatClient:
         """
         # Retrieve the user session:
         user_session, sess_created = self.get_or_create_user_session(prompt.from_user)
+        if sess_created:
+            self.logger.info(
+                f"Created new session for user {prompt.from_user.hashed_user_id}"
+            )
+            # Greet the user if this is their first message to the bot:
+            if not self.backend.does_user_exist(prompt.from_user):
+                self.logger.info(
+                    f"User {prompt.from_user.hashed_user_id} is new to the bot"
+                )
+                self._send_greeting_message(user_session)
         self.chat_history = models.ChatHistory(session=user_session)
         # Save the message prompt to the backend:
         self.save_prompt(prompt, user_session)
@@ -118,6 +128,18 @@ class OpenAIChatClient:
                 image_handler.reply, prompt, user_session, image_prompt=img_prompt
             )
         return prompt_output
+
+    def _send_greeting_message(
+        self, user_session: models.UserSession
+    ) -> models.HandlerOutput:
+        """
+        Sends a greeting message to the user.
+        """
+        greeting_response = models.MessageResponse(
+            body=settings.USER_WELCOME_MESSAGE,
+            to_user=user_session.user,
+        )
+        self.send_response(greeting_response)
 
     def save_prompt(
         self, prompt: models.MessagePrompt, user_session: models.UserSession
@@ -236,14 +258,14 @@ class OpenAIChatClient:
             self.logger.error(
                 f"An error '{error}' occurred while generating a response for the message: '{prompt}'"
             )
-        self.send_response(
+        self.provider.send_response(
             models.MessageResponse(
                 body=error.message,
                 to_user=prompt.from_user,
                 status_code=error.status_code,
             )
         )
-        self.end_user_session(prompt.from_user)
+        self.backend.end_user_session(prompt.from_user)
 
     def _exec_async(self, f, *args, **kwargs):
         """
