@@ -87,9 +87,9 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         )
         return session_config
 
-    def _get_user_refferal_link(self, user: User) -> str:
-        refferal_code, _ = self.__get_or_create_refferal_code(user)
-        code_text_url = quote(f"/refferal {refferal_code}")
+    def _get_user_referral_link(self, user: User) -> str:
+        referral_code, _ = self.__get_or_create_referral_code(user)
+        code_text_url = quote(f"BrightBot referral: {referral_code}")
         phone_number = settings.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER
         url = f"https://wa.me/{phone_number}?text={code_text_url}"
         return url
