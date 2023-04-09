@@ -132,6 +132,31 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+  ChatMessagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub
+        - "${AppName}-ChatMessages"
+        - AppName: !Ref AppName
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        - AttributeName: "SessionId"
+          AttributeType: "S"
+        - AttributeName: "TimestampCreated"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "SessionId"
+          KeyType: "HASH"
+        - AttributeName: "TimestampCreated"
+          KeyType: "RANGE"
+      TimeToLiveSpecification:
+        AttributeName: "SessionTTL"
+        Enabled: True
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
   ImageResponsesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -236,7 +261,7 @@ Resources:
               - "sts:AssumeRole"
       Policies:
         - PolicyName: !Sub
-            - "${AppName}DynamoDBTablesAllowAll"
+            - "${AppName}-DynamoDBTablesAllowAll"
             - AppName: !Ref AppName
           PolicyDocument:
             Version: "2012-10-17"
