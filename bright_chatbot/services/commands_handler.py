@@ -33,8 +33,8 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
             output = self._handle_img_cmd(prompt, user_session)
         elif prompt.body == "/help":
             output = self._handle_help_cmd(prompt, user_session)
-        elif prompt.body == "/refferal":
-            output = self._handle_refferal_cmd(prompt, user_session)
+        elif prompt.body == "/referral":
+            output = self._handle_referral_cmd(prompt, user_session)
         else:
             output = self._handle_not_recognized(prompt, user_session)
         self.logger.info(f"Sent reply to command with output: '{output}'")
@@ -55,12 +55,12 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
         )
         return output
 
-    def _handle_refferal_cmd(self, prompt, user_session: UserSession) -> HandlerOutput:
+    def _handle_referral_cmd(self, prompt, user_session: UserSession) -> HandlerOutput:
         """
-        Handles the refferal command.
+        Handles the referral command.
         """
         response = MessageResponse(
-            body=f"Here's a link you can share to refer your friends: {user_session.session_config.user_refferal_link}",
+            body=f"Here's a link you can share to refer your friends: {user_session.session_config.user_referral_link}",
             to_user=user_session.user,
         )
         self.client.send_response(response)
@@ -99,8 +99,8 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
             "/help - Show this message\n"
             "/reset or /quit - End the chat session\n"
             "/image <prompt> or /img <prompt> - Generate an image using the given prompt\n"
-            "/refferal - Get a link to refer your friends\n"
-            "/refferal <code> - Use a refferal code to get a discount\n",
+            "/referral - Get a link to refer your friends\n"
+            "/referral <code> - Use a referral code to get a discount\n",
             to_user=user_session.user,
         )
         self.client.send_response(response)

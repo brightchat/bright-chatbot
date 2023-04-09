@@ -29,7 +29,7 @@ class UserSessionConfig(BaseModel):
     max_image_requests: Optional[int] = settings.MAX_IMAGE_REQUESTS_PER_SESSION
     image_generation_size: Optional[str] = settings.IMAGE_GENERATION_SIZE
     extra_content_system_prompt: Optional[str] = settings.EXTRA_CONTENT_SYSTEM_PROMPT
-    user_refferal_link: Optional[str] = settings.USER_REFFERAL_LINK
+    user_referral_link: Optional[str] = settings.USER_REFERRAL_LINK
 
 
 class UserSession(BaseModel):
