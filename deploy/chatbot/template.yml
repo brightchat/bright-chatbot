@@ -8,6 +8,13 @@ Parameters:
     Type: String
     Default: bright-chatbot
     Description: Name of the Application
+  AppEnvironment:
+    Type: String
+    Default: Staging
+    Description: Environment of the Application
+    AllowedValues:
+      - Staging
+      - Production
   WhatsAppBusinessAuthToken:
     Type: String
     Description: Auth token for the WhatsApp Business API
@@ -61,6 +68,10 @@ Parameters:
       - WARNING
       - ERROR
       - CRITICAL
+  SentryDSN:
+    Type: String
+    Description: DSN of the Sentry project to send errors to.
+    Default: ""
   AppAdminUsers:
     Type: String
     Description: "A comma separated list of strings with the Twilio phone numbers of the application's admin users"
@@ -127,6 +138,31 @@ Resources:
               KeyType: "HASH"
           Projection:
             ProjectionType: "ALL"
+      Tags:
+        - Key: "managed_by"
+          Value: "CloudFormation"
+        - Key: "Application"
+          Value: !Ref AppName
+  ChatMessagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub
+        - "${AppName}-ChatMessages"
+        - AppName: !Ref AppName
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        - AttributeName: "SessionId"
+          AttributeType: "S"
+        - AttributeName: "TimestampCreated"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "SessionId"
+          KeyType: "HASH"
+        - AttributeName: "TimestampCreated"
+          KeyType: "RANGE"
+      TimeToLiveSpecification:
+        AttributeName: "SessionTTL"
+        Enabled: True
       Tags:
         - Key: "managed_by"
           Value: "CloudFormation"
@@ -210,7 +246,7 @@ Resources:
     Properties:
       DisplayName: "Dead Letter Topic"
       TopicName: !Sub
-        - "${AppName}DeadLetterTopic"
+        - "${AppName}-DeadLetterTopic"
         - AppName: !Ref AppName
       Subscription:
         - Endpoint: !Ref AdminEmail
@@ -235,28 +271,20 @@ Resources:
             Action:
               - "sts:AssumeRole"
       Policies:
-        - PolicyName: !Sub
-            - "${AppName}DynamoDBTablesAllowAll"
-            - AppName: !Ref AppName
+        - PolicyName: !Sub "${AppName}-DynamoDBTablesAllowAll"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+                # Give access to all tables that start with the app name:
               - Effect: Allow
                 Action: dynamodb:*
                 Resource:
-                  - !GetAtt SessionsTable.Arn
-                  - !GetAtt ChatsTable.Arn
-                  - !Sub
-                    - "${Arn}/index/*"
-                    - Arn: !GetAtt ChatsTable.Arn
-                  - !GetAtt ImageResponsesTable.Arn
-                  - !Sub
-                    - "${Arn}/index/*"
-                    - Arn: !GetAtt ImageResponsesTable.Arn
-                  - !GetAtt UsersReferralCodesTable.Arn
-                  - !Sub
-                    - "${Arn}/index/*"
-                    - Arn: !GetAtt UsersReferralCodesTable.Arn
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AppName}-*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AppName}-*/index/*"
+        - PolicyName: !Sub "${AppName}-SNSTopicAllowPublish"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
               # Allow the lambda function to publish to the SNS Topic
               - Effect: Allow
                 Action: sns:Publish
@@ -274,6 +302,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: python3.9
+      FunctionName: !Sub
+        - "${AppName}-BackendLambdaFunction"
+        - AppName: !Ref AppName
       Role: !GetAtt LambdaIAMRole.Arn
       Handler: lambda_handler.lambda_handler
       Description: !Sub
@@ -287,19 +318,21 @@ Resources:
       ReservedConcurrentExecutions: 10
       Environment:
         Variables:
+          SENTRY_DSN: !Ref SentryDSN
+          SENTRY_ENVIRONMENT: !Ref AppEnvironment
           WHATSAPP_BUSINESS_AUTH_TOKEN: !Ref WhatsAppBusinessAuthToken
           WHATSAPP_BUSINESS_PHONE_NUMBER_ID: !Ref WhatsAppBusinessPhoneNumberId
           WHATSAPP_BUSINESS_FROM_PHONE_NUMBER : !Ref WhatsAppBusinessFromPhoneNumber
           OPENAI_API_KEY: !Ref OpenAIAPIKey
           LAMBDA_LOG_LEVEL: !Ref LambdaLogLevel
           APP_NAME: !Ref AppName
-          OPENAI_MOBILE_SECRET_KEY: !Ref OpenAIMobileSecretKey
-          OPENAI_MOBILE_IMAGE_GENERATION_SIZE: !Ref BotImageGenerationSize
-          OPENAI_MOBILE_MAX_SESSION_DURATION_MINUTES: !Ref SessionsExpirationMinutes
-          OPENAI_MOBILE_MAX_SESSIONS_PER_DAY: !Ref SessionsQuotaPerUser
-          OPENAI_MOBILE_MAX_REQUESTS_PER_SESSION: !Ref MessagesQuotaPerUserSession
-          OPENAI_MOBILE_ADMIN_USERS: !Ref AppAdminUsers
-          OPENAI_MOBILE_DYNAMODB_TABLES_PREFIX: !Sub ${AppName}-
+          BRIGHT_CHATBOT_SECRET_KEY: !Ref OpenAIMobileSecretKey
+          BRIGHT_CHATBOT_IMAGE_GENERATION_SIZE: !Ref BotImageGenerationSize
+          BRIGHT_CHATBOT_MAX_SESSION_DURATION_MINUTES: !Ref SessionsExpirationMinutes
+          BRIGHT_CHATBOT_MAX_SESSIONS_PER_DAY: !Ref SessionsQuotaPerUser
+          BRIGHT_CHATBOT_MAX_REQUESTS_PER_SESSION: !Ref MessagesQuotaPerUserSession
+          BRIGHT_CHATBOT_ADMIN_USERS: !Ref AppAdminUsers
+          BRIGHT_CHATBOT_DYNAMODB_TABLES_PREFIX: !Sub ${AppName}-
           STRIPE_API_KEY: !Ref StripeApiKey
       # Dead letter queue configuration
       DeadLetterQueue:

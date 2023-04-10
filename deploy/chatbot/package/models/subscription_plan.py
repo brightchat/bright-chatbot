@@ -9,35 +9,37 @@ class SubscriptionPlan(BaseModel):
     Model that stores information about a subscription plan.
     """
 
-    """ Unique identifier of the subscription plan. """
     id: str
+    """ Unique identifier of the subscription plan. """
 
-    """ Name of the subscription plan. """
     name: str
+    """ Name of the subscription plan. """
 
-    """ Description of the subscription plan. """
     description: str
+    """ Description of the subscription plan. """
 
-    """Number of sessions allowed per period in the plan, None if unlimited"""
     sessions_quota: Union[int, None]
+    """Number of sessions allowed per period in the plan, None if unlimited"""
 
-    """Number of messages allowed per session in the plan, None if unlimited"""
     messages_quota: Union[int, None]
+    """Number of messages allowed per session in the plan, None if unlimited"""
 
-    """Number of image requests allowed per session in the plan, None if unlimited"""
     image_generation_quota: Union[int, None]
+    """Number of image requests allowed per session in the plan, None if unlimited"""
 
-    """Resolution of the images generated in the plan"""
     image_resolution_size: Literal["small", "medium", "large"]
+    """Resolution of the images generated in the plan"""
 
+    quota_reset_period: Union[
+        Literal["hourly", "daily", "weekly", "monthly"], None
+    ] = None
     """Period of time in which the quota is reset."""
-    quota_reset_period: Union[Literal["day"], None] = None
 
     @property
     def quota_reset_period_text(self) -> str:
-        quota_reset_period_text = f" per {self.quota_reset_period}."
+        quota_reset_period_text = self.quota_reset_period
         if not self.quota_reset_period:
-            quota_reset_period_text = " in total."
+            quota_reset_period_text = "in total."
         return quota_reset_period_text
 
     def get_welcome_message(self, referral_link: str) -> str:

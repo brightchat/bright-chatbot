@@ -4,6 +4,7 @@ from bright_chatbot.backends.dynamodb.tables import (
     SessionsTableController,
     ImageResponsesTableController,
     ChatsTableController,
+    ChatMessagesTableController,
 )
 
 
@@ -13,3 +14,4 @@ class DynamoTablesController:
         self.sessions = SessionsTableController(self.client)
         self.image_responses = ImageResponsesTableController(self.client)
         self.chats = ChatsTableController(self.client)
+        self.chat_messages = ChatMessagesTableController(self.client)

@@ -5,13 +5,11 @@ from bright_chatbot.backends.dynamodb.tables.base import BaseTableController
 
 
 class ChatsTableController(BaseTableController):
-
     TABLE_NAME = "Chats"
 
     def get_user_chat_session(self, session_id: str) -> List[Dict[str, Any]]:
         """
-        Retrieves the messages of the chat from the user
-        given the session id.
+        Retrieves the entries of the chat given a session id.
         """
         response = self._query(
             recursive=True,
@@ -29,13 +27,14 @@ class ChatsTableController(BaseTableController):
         self,
         session_id: str,
         user_id: str,
-        message: str,
+        message_length: int,
         timestamp_created: float,
         agent: Literal["assistant", "user"],
+        user_chat_plan: str = None,
         image_id: str = None,
     ) -> Dict[str, Any]:
         """
-        Records a new chat message into the table
+        Records a new chat entry into the table
         """
         item = {
             "SessionId": {
@@ -44,10 +43,11 @@ class ChatsTableController(BaseTableController):
             "UserId": {
                 "S": user_id,
             },
-            "Message": {"S": message},
+            "MessageLength": {"N": str(message_length)},
             "TimestampCreated": {"N": str(timestamp_created)},
             "ChatAgent": {"S": agent.lower()},
-            "ImageId": {"S": image_id or ""},
+            "ImageId": {"S": image_id} if image_id else {"NULL": True},
+            "UserChatPlan": {"S": user_chat_plan} if user_chat_plan else {"NULL": True},
         }
         response = self._put_item(Item=item)
         response["Item"] = item
@@ -57,7 +57,7 @@ class ChatsTableController(BaseTableController):
         self, user_id: str, from_date: datetime = None, to_date: datetime = None
     ) -> List[Dict[str, Any]]:
         """
-        Retrieves all the messages of the user given,
+        Retrieves all the chat entries of the user given,
         optionally filtered by two dates.
         """
         kwargs = dict(

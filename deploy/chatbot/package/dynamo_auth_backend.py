@@ -1,3 +1,4 @@
+import datetime as dt
 from datetime import datetime
 import logging
 import os
@@ -62,13 +63,14 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         """
         Configures the number of messages per day for each subscription plan.
         """
-        extra_content_system_prompt = (
-            f"The user is on the '{plan.name}' Suscription Plan of the service."
-            f"With a maximum quota of {plan.messages_quota} messages and {plan.image_generation_quota} image generations"
-        )
-        extra_content_system_prompt += plan.quota_reset_period_text
         # Get user's referral link:
         referral_link = self._get_user_referral_link(user)
+        extra_content_system_prompt = (
+            f"The user is on the '{plan.name}' Suscription Plan of the service. "
+            f"With a maximum quota of {plan.messages_quota} {plan.quota_reset_period} messages and {plan.image_generation_quota} image generations. "
+            "They can also refer their friends and colleagues to get free rewards on their subscription plan "
+            f"using their referral link '{referral_link}'."
+        )
         # Set the user welcome message:
         settings.USER_WELCOME_MESSAGE = plan.get_welcome_message(referral_link)
         # Create the user's session config:
@@ -81,6 +83,7 @@ class DynamoSessionAuthBackend(DynamodbBackend):
             image_generation_size=plan.image_resolution_size,
             extra_content_system_prompt=extra_content_system_prompt,
             user_referral_link=referral_link,
+            user_plan=plan.name,
         )
         logging.getLogger("bright_chatbot").debug(
             f"Set user session config to '{session_config.dict()}'"
@@ -124,7 +127,7 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         """
         Gets the number of images the user has generated in the conversation.
         """
-        return len(list(filter(lambda x: x["ImageId"]["S"], user_conversation)))
+        return len(list(filter(lambda x: x["ImageId"].get("S"), user_conversation)))
 
     def _get_user_subscription_plan(self, user: User) -> SubscriptionPlan:
         user_subscription = self._get_user_subscription(user)
@@ -156,10 +159,21 @@ class DynamoSessionAuthBackend(DynamodbBackend):
     def _get_user_conversation(
         self, user: User, period: str = Union[Literal["day"], None]
     ) -> list:
-        if period == "day":
+        if period == "daily":
             # Retrieve all messages from the user from the beginning of the day
             day_start_date = datetime.now().replace(
                 hour=0, minute=0, second=0, microsecond=0
+            )
+        elif period == "weekly":
+            # Retrieve all messages from the user from the beginning of the week
+            day_start_date = datetime.now().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            day_start_date -= dt.timedelta(days=day_start_date.weekday())
+        elif period == "monthly":
+            # Retrieve all messages from the user from the beginning of the month
+            day_start_date = datetime.now().replace(
+                hour=0, minute=0, second=0, microsecond=0, day=1
             )
         elif not period:
             day_start_date = None

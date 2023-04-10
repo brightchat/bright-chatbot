@@ -254,10 +254,6 @@ class OpenAIChatClient:
         """
         if not isinstance(error, exceptions.ApplicationError):
             error = error_msgs.UNEXPECTED_ERROR.exception
-        if error.status_code >= 500:
-            self.logger.error(
-                f"An error '{error}' occurred while generating a response for the message: '{prompt}'"
-            )
         self.provider.send_response(
             models.MessageResponse(
                 body=error.message,
