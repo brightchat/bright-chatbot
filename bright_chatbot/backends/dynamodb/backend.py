@@ -1,13 +1,16 @@
-from datetime import datetime
 import json
-from typing import List, Dict, Union
+from typing import List, Union
 
-from bright_chatbot.models import User, UserSession
+from bright_chatbot.models import (
+    User,
+    UserSession,
+    MessagePrompt,
+    MessageResponse,
+    UserSessionConfig,
+)
 from bright_chatbot.backends.base_backend import BaseDataBackend
 from bright_chatbot.backends.dynamodb._controller import DynamoTablesController
-from bright_chatbot.models.message import MessagePrompt, MessageResponse
 from bright_chatbot.configs import settings
-from bright_chatbot.models.user import UserSessionConfig
 
 
 class DynamodbBackend(BaseDataBackend):
@@ -118,8 +121,10 @@ class DynamodbBackend(BaseDataBackend):
         self.controller.chats.record_chat_message(
             session_id=session.session_id,
             user_id=session.user.hashed_user_id,
+            message_length=len(message.body),
             timestamp_created=message.created_at.timestamp(),
             agent="user",
+            user_chat_plan=session.session_config.user_plan,
         )
         self.controller.chat_messages.record_chat_message(
             session_id=session.session_id,
@@ -146,8 +151,10 @@ class DynamodbBackend(BaseDataBackend):
         self.controller.chats.record_chat_message(
             session_id=session.session_id,
             user_id=session.user.hashed_user_id,
+            message_length=len(message.body),
             timestamp_created=message.created_at.timestamp(),
             agent="assistant",
+            user_chat_plan=session.session_config.user_plan,
             image_id=image_id,
         )
         self.controller.chat_messages.record_chat_message(

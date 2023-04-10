@@ -3,11 +3,16 @@ import logging
 import os
 from typing import Any, Dict
 
+import sentry_sdk
+
+sentry_sdk.init(traces_sample_rate=1.0, enable_tracing=True)
+
 from dynamo_auth_backend import DynamoSessionAuthBackend
 
 from bright_chatbot.client import OpenAIChatClient
 from bright_chatbot.models import MessagePrompt, User
 from bright_chatbot.providers.ws_business.provider import WhatsAppBusinessProvider
+
 
 xray_recorder = None
 try:
@@ -46,6 +51,8 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
     if xray_recorder:
         subsegment = xray_recorder.begin_subsegment("bright_chatbot")
         subsegment.put_annotation("user_id", user.hashed_user_id)
+    # Record the User Id with Sentry:
+    sentry_sdk.set_user({"id": user.hashed_user_id})
     client.reply(message_prompt)
     return {
         "isBase64Encoded": False,

@@ -32,6 +32,8 @@ Logs the timestamp of the messages and responses that are sent in a chat during 
 | -------- | ----------- | ---- | ----- | ----- |
 | SessionId | Identifier of the session, a conversation between the user and the bot | Text (UserId + ":" + TimestampCreated) | Yes | No
 | UserId | Identifier of the **User** associated with the chat | Text (Hashed phone number) | No | No
+| MessageLength | Length of the message sent by the user | Numeric | No | No
+| UserChatPlan | Chat plan of the user | Text (Enum) | No | No
 | TimestampCreated | UNIX Timestamp for when the message was created by either the bot or the user | Numeric | No | Yes
 | ChatAgent | Agent that sent the message. Can be either `assistant` (Our bot) or `user` | Text (Enum) | No | No
 | ImageId | When response contains an image, unique identifier of the image in the `ImageResponses` table | Text (SHA256 from `image_b64`) | No | No

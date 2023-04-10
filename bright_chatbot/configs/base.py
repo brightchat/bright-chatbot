@@ -7,7 +7,7 @@ from bright_chatbot.utils.functional import classproperty
 
 
 class BaseSettings(abc.ABC):
-    SETTINGS_PREFIX = "OPENAI_MOBILE"
+    SETTINGS_PREFIX = "BRIGHT_CHATBOT"
 
     def get(
         self,

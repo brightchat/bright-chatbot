@@ -5,7 +5,7 @@ from typing import List, Dict, Union, Type
 from pydantic import BaseModel
 
 from bright_chatbot.configs import settings
-from bright_chatbot.models.user import UserSession
+from bright_chatbot.models.sessions import UserSession
 from bright_chatbot.models.message import MessagePrompt, MessageResponse
 from bright_chatbot.backends.base_backend import BaseDataBackend
 

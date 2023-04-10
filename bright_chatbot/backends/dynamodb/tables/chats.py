@@ -27,8 +27,10 @@ class ChatsTableController(BaseTableController):
         self,
         session_id: str,
         user_id: str,
+        message_length: int,
         timestamp_created: float,
         agent: Literal["assistant", "user"],
+        user_chat_plan: str = None,
         image_id: str = None,
     ) -> Dict[str, Any]:
         """
@@ -41,9 +43,11 @@ class ChatsTableController(BaseTableController):
             "UserId": {
                 "S": user_id,
             },
+            "MessageLength": {"N": str(message_length)},
             "TimestampCreated": {"N": str(timestamp_created)},
             "ChatAgent": {"S": agent.lower()},
-            "ImageId": {"S": image_id or ""},
+            "ImageId": {"S": image_id} if image_id else {"NULL": True},
+            "UserChatPlan": {"S": user_chat_plan} if user_chat_plan else {"NULL": True},
         }
         response = self._put_item(Item=item)
         response["Item"] = item
