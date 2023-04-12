@@ -88,12 +88,12 @@ class OpenAIChatClient:
             self.logger.info(
                 f"Created new session for user {prompt.from_user.hashed_user_id}"
             )
-            # Greet the user if this is their first message to the bot:
+            # Only send a Greeting to the user if this is their first message to the bot:
             if not self.backend.does_user_exist(prompt.from_user):
                 self.logger.info(
                     f"User {prompt.from_user.hashed_user_id} is new to the bot"
                 )
-                self._send_greeting_message(user_session)
+                return self._send_greeting_message(prompt, user_session)
         self.chat_history = models.ChatHistory(session=user_session)
         # Save the message prompt to the backend:
         self.save_prompt(prompt, user_session)
@@ -130,7 +130,7 @@ class OpenAIChatClient:
         return prompt_output
 
     def _send_greeting_message(
-        self, user_session: models.UserSession
+        self, prompt: models.MessagePrompt, user_session: models.UserSession
     ) -> models.HandlerOutput:
         """
         Sends a greeting message to the user.
@@ -140,6 +140,11 @@ class OpenAIChatClient:
             to_user=user_session.user,
         )
         self.send_response(greeting_response)
+        return models.HandlerOutput(
+            message_prompt=prompt,
+            message_response=greeting_response,
+            requested_features={},
+        )
 
     def save_prompt(
         self, prompt: models.MessagePrompt, user_session: models.UserSession

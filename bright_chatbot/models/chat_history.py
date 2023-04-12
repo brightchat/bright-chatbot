@@ -22,9 +22,6 @@ class ChatHistory(BaseModel):
     def to_chat_representation(self) -> List[Dict[str, str]]:
         """
         Returns a list of dicts that can be used for chat completions
-
-        The system role is repeated every 3 messages to ensure that the chat
-        completion is not biased towards the user's last messages.
         """
         chat_history_repr = []
         # Add the initial system prompt containing instructions and the status of the session
@@ -44,13 +41,7 @@ class ChatHistory(BaseModel):
                     "content": self.session.session_config.extra_content_system_prompt,
                 }
             )
-        system_prompt_counter = 10
-        system_prompt_seq_repetition = 10
         for message in self.messages:
-            system_prompt_counter -= 1
-            if system_prompt_counter <= 0:
-                chat_history_repr.append({"role": "system", "content": system_prompt})
-                system_prompt_counter = system_prompt_seq_repetition
             chat_history_repr.append(message.to_chat_repr())
         return chat_history_repr
 

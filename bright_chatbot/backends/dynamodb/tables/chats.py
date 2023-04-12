@@ -46,7 +46,7 @@ class ChatsTableController(BaseTableController):
             "MessageLength": {"N": str(message_length)},
             "TimestampCreated": {"N": str(timestamp_created)},
             "ChatAgent": {"S": agent.lower()},
-            "ImageId": {"S": image_id} if image_id else {"NULL": True},
+            "ImageId": {"S": image_id or ""},
             "UserChatPlan": {"S": user_chat_plan} if user_chat_plan else {"NULL": True},
         }
         response = self._put_item(Item=item)
