@@ -66,10 +66,19 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         # Get user's referral link:
         referral_link = self._get_user_referral_link(user)
         extra_content_system_prompt = (
+            "There are a total of 3 subscriptions plans available for the service. "
+            "The Basic plan is free and allows up to 20 messages and 1 image generation in total "
+            "The Standard plan costs $4.99 per month and allows up to 50 messages and 5 image generations per day "
+            "The Premium plan costs $14.99 per month and allows up to 250 messages and 10 high-resolution image generations per day. "
             f"The user is on the '{plan.name}' Suscription Plan of the service. "
             f"With a maximum quota of {plan.messages_quota} {plan.quota_reset_period} messages and {plan.image_generation_quota} image generations. "
             "They can also refer their friends and colleagues to get free rewards on their subscription plan "
-            f"using their referral link '{referral_link}'."
+            f"by sending them their referral link '{referral_link}'."
+            "Here are some useful links for if the user asks for them:\n"
+            "- Our website: https://brightbot.chat\n"
+            "- Our FAQ: https://brightbot.chat/faq\n"
+            "- Our Privacy Policy: https://brightbot.chat/privacy\n"
+            "- Our Terms and Conditions: https://brightbot.chat/cookies#Terms%20and%20Conditions.\n"
         )
         # Set the user welcome message:
         settings.USER_WELCOME_MESSAGE = plan.get_welcome_message(referral_link)
