@@ -14,15 +14,15 @@ Parameters:
   StripeWebhookSecret:
     Type: String
     Description: Endpoint Secret used to authenticate to the Stripe API when receiving webhooks
-  TwilioAuhToken:
+  WhatsAppBusinessAuthToken:
     Type: String
-    Description: Token used to authenticate to the Twilio API
-  TwilioAccountSID:
+    Description: Auth token for the WhatsApp Business API
+  WhatsAppBusinessPhoneNumberId:
     Type: String
-    Description: Account SID used to authenticate to the Twilio API
-  TwilioPhoneNumber:
+    Description: Phone number Id associated with your WhatsApp Business API account to send messages from.
+  WhatsAppBusinessFromPhoneNumber:
     Type: String
-    Description: "Twilio registered phone number associated with the account used. eg: 'whatsapp:+12345678901'"
+    Description: Phone number associated with your WhatsApp Business API account to send messages from.
   OpenAIMobileSecretKey:
     Type: String
     Description: Application Secret Key for cryptographically signing
@@ -229,9 +229,9 @@ Resources:
       Environment:
         Variables:
           OPENAI_MOBILE_SECRET_KEY: !Ref OpenAIMobileSecretKey
-          TWILIO_AUTH_TOKEN: !Ref TwilioAuhToken
-          TWILIO_ACCOUNT_SID: !Ref TwilioAccountSID
-          TWILIO_PHONE_NUMBER: !Ref TwilioPhoneNumber
+          WHATSAPP_BUSINESS_AUTH_TOKEN: !Ref WhatsAppBusinessAuthToken
+          WHATSAPP_BUSINESS_PHONE_NUMBER_ID: !Ref WhatsAppBusinessPhoneNumberId
+          WHATSAPP_BUSINESS_FROM_PHONE_NUMBER : !Ref WhatsAppBusinessFromPhoneNumber
           LAMBDA_LOG_LEVEL: !Ref LambdaLogLevel
           APP_NAME: !Ref AppName
           STRIPE_API_KEY: !Ref StripeApiKey
