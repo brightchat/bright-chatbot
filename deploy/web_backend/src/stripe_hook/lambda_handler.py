@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from bright_chatbot.models import User, MessageResponse
-from bright_chatbot.providers.twilio import TwilioProvider
+from bright_chatbot.providers.ws_business.provider import WhatsAppBusinessProvider
 from bright_chatbot.utils.exceptions import ValidationError
 
 import stripe
@@ -65,7 +65,7 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         body=message_template,
         to_user=user,
     )
-    provider = TwilioProvider()
+    provider = WhatsAppBusinessProvider()
     provider.send_response(msg_response)
     return {
         "isBase64Encoded": False,
