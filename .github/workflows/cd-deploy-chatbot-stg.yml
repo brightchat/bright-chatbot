@@ -2,11 +2,12 @@ name: "Deploy Staging CloudFormation Stack"
 
 on:
   push:
-    branches: ['main']
-    paths:
-      - 'deploy/chatbot/template.yml'
-      - 'deploy/chatbot/package/**'
-      - 'bright_chatbot/**'
+    # branches: ['main']
+    branches: ['fix-cd-#865c506ub'] #! TODO: REMOVE THIS LINE AND UNCOMMENT ABOVE
+    # paths: #! TODO: UNCOMMENT ALL BELOW
+    #   - 'deploy/chatbot/template.yml'
+    #   - 'deploy/chatbot/package/**'
+    #   - 'bright_chatbot/**'
 
 permissions:
   id-token: write
@@ -31,6 +32,8 @@ jobs:
     - name: Configure SAM CLI
       id: configure-sam
       uses: aws-actions/setup-sam@v2
+        with:
+          python: true
 
     - name: Configure AWS credentials
       id: creds
