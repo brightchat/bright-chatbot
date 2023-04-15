@@ -68,7 +68,9 @@ jobs:
       id: set-changeset-output
       working-directory: deploy/chatbot
       run: |
-        echo "CHANGESET_OUT=$(cat sam-generate-plan.out)" >> $GITHUB_ENV
+        echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
+        cat sam-generate-plan.out >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
 
     - name: Display Changeset on PR
       id: display-changeset-pr
