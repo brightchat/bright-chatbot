@@ -1,5 +1,12 @@
 name: "Deploy Production CloudFormation Stack"
 
+# This workflow is triggered by the creation of a new release.
+# Note: Pre-releases are ignored and draft releases do not trigger this workflow.
+# See: https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads?actionType=released#release
+on:
+  release:
+    types: [released]
+
 jobs:
   deploy-changes:
     runs-on: ubuntu-latest
