@@ -52,6 +52,8 @@ jobs:
             --parameter-overrides \
             ParameterKey=AppName,ParameterValue=brightbot-dev \
             ParameterKey=AppEnvironment,ParameterValue=Staging \
+            ParameterKey=AdminEmail,ParameterValue=${{vars.STG_ADMIN_EMAIL}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
             ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_AUTH_TOKEN}} \
             ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
             ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
@@ -59,8 +61,8 @@ jobs:
             ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.STG_BRIGHT_CHATBOT_SECRET_KEY}} \
             ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
             ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
-            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
           | tee sam-generate-plan.out
+        set -o pipefail
         echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
         cat sam-generate-plan.out >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV

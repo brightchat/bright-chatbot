@@ -31,7 +31,6 @@ Parameters:
   AdminEmail:
     Type: String
     Description: Email address of the application's admin user for notifications.
-    NoEcho: true
   BotImageGenerationSize:
     Type: String
     Default: small
