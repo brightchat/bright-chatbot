@@ -1,4 +1,4 @@
-name: "Display Staging CloudFormation Changeset"
+name: "Display Production CloudFormation Changeset"
 
 on:
   pull_request:
@@ -47,19 +47,19 @@ jobs:
       id: sam-generate-plan
       working-directory: deploy/chatbot
       run: |
-        sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot-dev --resolve-s3 \
+        sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot --resolve-s3 \
             --capabilities CAPABILITY_IAM \
             --parameter-overrides \
-            ParameterKey=AppName,ParameterValue=brightbot-dev \
-            ParameterKey=AppEnvironment,ParameterValue=Staging \
-            ParameterKey=AdminEmail,ParameterValue=${{vars.STG_ADMIN_EMAIL}} \
-            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
-            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_AUTH_TOKEN}} \
-            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
-            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
-            ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.STG_OPENAI_API_KEY}} \
-            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.STG_BRIGHT_CHATBOT_SECRET_KEY}} \
-            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
+            ParameterKey=AppName,ParameterValue=brightbot \
+            ParameterKey=AppEnvironment,ParameterValue=Production \
+            ParameterKey=AdminEmail,ParameterValue=${{vars.ADMIN_EMAIL}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=WARNING \
+            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.WHATSAPP_BUSINESS_AUTH_TOKEN}} \
+            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
+            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
+            ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.OPENAI_API_KEY}} \
+            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.BRIGHT_CHATBOT_SECRET_KEY}} \
+            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STRIPE_API_KEY}} \
             ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
           | tee sam-generate-plan.out
         exit ${PIPESTATUS[0]}
@@ -71,7 +71,7 @@ jobs:
       id: display-changeset-pr
       uses: marocchino/sticky-pull-request-comment@v2
       with:
-        header: CloudFormation Changeset Plan - Staging
+        header: CloudFormation Changeset Plan - Production
         message: |
           ## CloudFormation Changeset
 
