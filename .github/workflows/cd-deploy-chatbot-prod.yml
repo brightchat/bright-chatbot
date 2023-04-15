@@ -11,6 +11,9 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}
+
 jobs:
   deploy-changes:
     runs-on: ubuntu-latest
