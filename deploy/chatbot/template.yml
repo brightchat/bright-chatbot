@@ -360,5 +360,5 @@ Resources:
 
 Outputs:
   ApplicationLambdaFunctionArn:
-    Description: "ARN of the Lambda Function that handles the messages"
+    Description: "ARN of the Lambda Function that handles the messages sent to the Application"
     Value: !GetAtt BackendLambdaFunction.Arn
