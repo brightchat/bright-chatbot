@@ -62,11 +62,13 @@ jobs:
             ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
             ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
           | tee sam-generate-plan.out
-        cat sam-generate-plan.out
         exit ${PIPESTATUS[0]}
-        echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
-        cat sam-generate-plan.out >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
+
+    - name: Set Changeset Output
+      id: set-changeset-output
+      working-directory: deploy/chatbot
+      run: |
+        echo "CHANGESET_OUT=$(cat sam-generate-plan.out)" >> $GITHUB_ENV
 
     - name: Display Changeset on PR
       id: display-changeset-pr
