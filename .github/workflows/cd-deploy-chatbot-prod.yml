@@ -1,20 +1,7 @@
-name: "Display Production CloudFormation Changeset"
-
-on:
-  pull_request:
-    branches: ['main']
-    paths:
-      - 'deploy/chatbot/template.yml'
-      - 'deploy/chatbot/package/**'
-      - 'bright_chatbot/**'
-
-permissions:
-  id-token: write
-  contents: read
-  pull-requests: write
+name: "Deploy Production CloudFormation Stack"
 
 jobs:
-  display-changeset:
+  deploy-changes:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -40,14 +27,14 @@ jobs:
 
     - name: SAM build
       id: sam-build
-      working-directory: deploy/chatbot
+      working-directory: cloudformation
       run: sam build
 
-    - name: Generate Cloudformation Changeset
-      id: sam-generate-plan
-      working-directory: deploy/chatbot
+    - name: Deploy Changeset
+      id: sam-deploy
+      working-directory: cloudformation
       run: |
-        sam deploy --no-execute-changeset --no-fail-on-empty-changeset \
+        sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
             --resolve-s3 \
             --capabilities CAPABILITY_IAM \
             --stack-name brightbot \
@@ -62,33 +49,4 @@ jobs:
             ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.OPENAI_API_KEY}} \
             ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.BRIGHT_CHATBOT_SECRET_KEY}} \
             ParameterKey=StripeApiKey,ParameterValue=${{secrets.STRIPE_API_KEY}} \
-            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
-          | tee sam-generate-plan.out
-        exit ${PIPESTATUS[0]}
-
-    - name: Set Changeset Output
-      id: set-changeset-output
-      working-directory: deploy/chatbot
-      run: |
-        echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
-        cat sam-generate-plan.out >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-
-    - name: Display Changeset on PR
-      id: display-changeset-pr
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: CloudFormation Changeset Plan - Production
-        message: |
-          ## CloudFormation Changeset - Production
-
-          A CloudFormation plan was generated from the changes in this PR. No modifications have been done yet.
-
-          <details>
-          <summary>Click to toggle the CloudFormation Changeset</summary>
-          
-          ```raw
-          ${{ env.CHANGESET_OUT }}
-          ```
-          
-          </details>
+            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}}

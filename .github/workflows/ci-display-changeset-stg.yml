@@ -47,8 +47,10 @@ jobs:
       id: sam-generate-plan
       working-directory: deploy/chatbot
       run: |
-        sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot-dev --resolve-s3 \
+        sam deploy --no-execute-changeset --no-fail-on-empty-changeset \
+            --resolve-s3 \
             --capabilities CAPABILITY_IAM \
+             --stack-name brightbot-dev \
             --parameter-overrides \
             ParameterKey=AppName,ParameterValue=brightbot-dev \
             ParameterKey=AppEnvironment,ParameterValue=Staging \
