@@ -8,6 +8,10 @@ on:
       - 'deploy/chatbot/package/**'
       - 'bright_chatbot/**'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   display-changeset:
     runs-on: ubuntu-latest
