@@ -8,6 +8,13 @@ on:
       - 'deploy/chatbot/package/**'
       - 'bright_chatbot/**'
 
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+
 jobs:
   deploy-changes:
     runs-on: ubuntu-latest
@@ -27,7 +34,7 @@ jobs:
 
     - name: Configure AWS credentials
       id: creds
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-region: ${{ vars.AWS_DEFAULT_REGION }}
         role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
@@ -42,17 +49,19 @@ jobs:
       id: sam-deploy
       working-directory: cloudformation
       run: |
-        sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot-dev --resolve-s3 \
+        sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --resolve-s3 \
             --capabilities CAPABILITY_IAM \
+            --stack-name brightbot-dev \
             --parameter-overrides \
             ParameterKey=AppName,ParameterValue=brightbot-dev \
             ParameterKey=AppEnvironment,ParameterValue=Staging \
+            ParameterKey=AdminEmail,ParameterValue=${{vars.STG_ADMIN_EMAIL}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
             ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_AUTH_TOKEN}} \
             ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
             ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
-            ParameterKey=BotImageGenerationSize,ParameterValue=small \
             ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.STG_OPENAI_API_KEY}} \
             ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.STG_BRIGHT_CHATBOT_SECRET_KEY}} \
-            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STRIPE_API_KEY}} \
-            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
-            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG
+            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
+            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}}

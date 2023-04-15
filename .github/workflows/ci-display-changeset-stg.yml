@@ -8,6 +8,15 @@ on:
       - 'deploy/chatbot/package/**'
       - 'bright_chatbot/**'
 
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   display-changeset:
     runs-on: ubuntu-latest
@@ -27,7 +36,7 @@ jobs:
 
     - name: Configure AWS credentials
       id: creds
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-region: ${{ vars.AWS_DEFAULT_REGION }}
         role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
@@ -35,18 +44,22 @@ jobs:
 
     - name: SAM build
       id: sam-build
-      working-directory: cloudformation
+      working-directory: deploy/chatbot
       run: sam build
 
     - name: Generate Cloudformation Changeset
       id: sam-generate-plan
-      working-directory: cloudformation
+      working-directory: deploy/chatbot
       run: |
-        sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot-dev --resolve-s3 \
+        sam deploy --no-execute-changeset --no-fail-on-empty-changeset \
+            --resolve-s3 \
             --capabilities CAPABILITY_IAM \
+             --stack-name brightbot-dev \
             --parameter-overrides \
             ParameterKey=AppName,ParameterValue=brightbot-dev \
             ParameterKey=AppEnvironment,ParameterValue=Staging \
+            ParameterKey=AdminEmail,ParameterValue=${{vars.STG_ADMIN_EMAIL}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
             ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_AUTH_TOKEN}} \
             ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
             ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
@@ -54,8 +67,13 @@ jobs:
             ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.STG_BRIGHT_CHATBOT_SECRET_KEY}} \
             ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
             ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
-            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
           | tee sam-generate-plan.out
+        exit ${PIPESTATUS[0]}
+
+    - name: Set Changeset Output
+      id: set-changeset-output
+      working-directory: deploy/chatbot
+      run: |
         echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
         cat sam-generate-plan.out >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
@@ -66,7 +84,7 @@ jobs:
       with:
         header: CloudFormation Changeset Plan - Staging
         message: |
-          ## CloudFormation Changeset
+          ## CloudFormation Changeset - Staging
 
           A CloudFormation plan was generated from the changes in this PR. No modifications have been done yet.
           

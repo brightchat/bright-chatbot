@@ -1,0 +1,66 @@
+name: "Deploy Production CloudFormation Stack"
+
+# This workflow is triggered by the creation of a new release.
+# Note: Pre-releases are ignored and draft releases do not trigger this workflow.
+# See: https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads?actionType=released#release
+on:
+  release:
+    types: [released]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  deploy-changes:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      id: checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.9"
+
+    - name: Configure SAM CLI
+      id: configure-sam
+      uses: aws-actions/setup-sam@v2
+
+    - name: Configure AWS credentials
+      id: creds
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+        role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+        role-duration-seconds: 1200
+
+    - name: SAM build
+      id: sam-build
+      working-directory: cloudformation
+      run: sam build
+
+    - name: Deploy Changeset
+      id: sam-deploy
+      working-directory: cloudformation
+      run: |
+        sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --stack-name brightbot \
+            --parameter-overrides \
+            ParameterKey=AppName,ParameterValue=brightbot \
+            ParameterKey=AppEnvironment,ParameterValue=Production \
+            ParameterKey=AdminEmail,ParameterValue=${{vars.ADMIN_EMAIL}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=WARNING \
+            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.WHATSAPP_BUSINESS_AUTH_TOKEN}} \
+            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
+            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
+            ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.OPENAI_API_KEY}} \
+            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.BRIGHT_CHATBOT_SECRET_KEY}} \
+            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STRIPE_API_KEY}} \
+            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}}

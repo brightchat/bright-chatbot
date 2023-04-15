@@ -1,0 +1,98 @@
+name: "Display Production CloudFormation Changeset"
+
+on:
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'deploy/chatbot/template.yml'
+      - 'deploy/chatbot/package/**'
+      - 'bright_chatbot/**'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  display-changeset:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      id: checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.9"
+
+    - name: Configure SAM CLI
+      id: configure-sam
+      uses: aws-actions/setup-sam@v2
+
+    - name: Configure AWS credentials
+      id: creds
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+        role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+        role-duration-seconds: 1200
+
+    - name: SAM build
+      id: sam-build
+      working-directory: deploy/chatbot
+      run: sam build
+
+    - name: Generate Cloudformation Changeset
+      id: sam-generate-plan
+      working-directory: deploy/chatbot
+      run: |
+        sam deploy --no-execute-changeset --no-fail-on-empty-changeset \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --stack-name brightbot \
+            --parameter-overrides \
+            ParameterKey=AppName,ParameterValue=brightbot \
+            ParameterKey=AppEnvironment,ParameterValue=Production \
+            ParameterKey=AdminEmail,ParameterValue=${{vars.ADMIN_EMAIL}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=WARNING \
+            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.WHATSAPP_BUSINESS_AUTH_TOKEN}} \
+            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
+            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
+            ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.OPENAI_API_KEY}} \
+            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.BRIGHT_CHATBOT_SECRET_KEY}} \
+            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STRIPE_API_KEY}} \
+            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
+          | tee sam-generate-plan.out
+        exit ${PIPESTATUS[0]}
+
+    - name: Set Changeset Output
+      id: set-changeset-output
+      working-directory: deploy/chatbot
+      run: |
+        echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
+        cat sam-generate-plan.out >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+
+    - name: Display Changeset on PR
+      id: display-changeset-pr
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: CloudFormation Changeset Plan - Production
+        message: |
+          ## CloudFormation Changeset - Production
+
+          A CloudFormation plan was generated from the changes in this PR. No modifications have been done yet.
+
+          <details>
+          <summary>Click to toggle the CloudFormation Changeset</summary>
+          
+          ```raw
+          ${{ env.CHANGESET_OUT }}
+          ```
+          
+          </details>
