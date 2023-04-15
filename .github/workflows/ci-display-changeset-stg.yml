@@ -62,6 +62,7 @@ jobs:
             ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
             ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
           | tee sam-generate-plan.out
+        cat sam-generate-plan.out
         exit ${PIPESTATUS[0]}
         echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
         cat sam-generate-plan.out >> $GITHUB_ENV
@@ -73,7 +74,7 @@ jobs:
       with:
         header: CloudFormation Changeset Plan - Staging
         message: |
-          ## CloudFormation Changeset
+          ## CloudFormation Changeset - Staging
 
           A CloudFormation plan was generated from the changes in this PR. No modifications have been done yet.
           

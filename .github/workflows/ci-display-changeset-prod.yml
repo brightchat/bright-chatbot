@@ -73,7 +73,7 @@ jobs:
       with:
         header: CloudFormation Changeset Plan - Production
         message: |
-          ## CloudFormation Changeset
+          ## CloudFormation Changeset - Production
 
           A CloudFormation plan was generated from the changes in this PR. No modifications have been done yet.
           
