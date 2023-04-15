@@ -42,12 +42,12 @@ jobs:
 
     - name: SAM build
       id: sam-build
-      working-directory: cloudformation
+      working-directory: deploy/chatbot
       run: sam build
 
     - name: Deploy Changeset
       id: sam-deploy
-      working-directory: cloudformation
+      working-directory: deploy/chatbot
       run: |
         sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
             --resolve-s3 \
