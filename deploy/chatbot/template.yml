@@ -35,9 +35,9 @@ Parameters:
   OpenAIAPIKey:
     Type: String
     Description: API key associated with an OpenAI account.
-  OpenAIMobileSecretKey:
+  BrightChatBotSecretKey:
     Type: String
-    Description: A secure secret key.
+    Description: A secure secret key for the application.
   StripeApiKey:
     Type: String
     Description: API key used to authenticate to the Stripe API
@@ -72,10 +72,6 @@ Parameters:
     Type: String
     Description: DSN of the Sentry project to send errors to.
     Default: ""
-  AppAdminUsers:
-    Type: String
-    Description: "A comma separated list of strings with the Twilio phone numbers of the application's admin users"
-    Default: ""
 Resources:
   # === DynamoDB Tables ====
   ## --- Application Tables ---
@@ -104,6 +100,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   ChatsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -143,6 +141,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   ChatMessagesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -168,6 +168,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   ImageResponsesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -199,6 +201,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   ## --- Management Tables ---
   UsersReferralCodesTable:
     Type: AWS::DynamoDB::Table
@@ -229,6 +233,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   # === Lambda Function ===
   MessagesQueueDLQ: # Store failed messages in this queue
     Type: AWS::SQS::Queue
@@ -241,6 +247,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   DeadLetterTopic: # Use an SNS Topic as the dead letter queue of the lambda function
     Type: AWS::SNS::Topic
     Properties:
@@ -258,6 +266,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   LambdaIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -298,6 +308,8 @@ Resources:
           Value: "CloudFormation"
         - Key: "Application"
           Value: !Ref AppName
+        - Key: "Environment"
+          Value: !Ref AppEnvironment
   BackendLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -326,12 +338,11 @@ Resources:
           OPENAI_API_KEY: !Ref OpenAIAPIKey
           LAMBDA_LOG_LEVEL: !Ref LambdaLogLevel
           APP_NAME: !Ref AppName
-          BRIGHT_CHATBOT_SECRET_KEY: !Ref OpenAIMobileSecretKey
+          BRIGHT_CHATBOT_SECRET_KEY: !Ref BrightChatBotSecretKey
           BRIGHT_CHATBOT_IMAGE_GENERATION_SIZE: !Ref BotImageGenerationSize
           BRIGHT_CHATBOT_MAX_SESSION_DURATION_MINUTES: !Ref SessionsExpirationMinutes
           BRIGHT_CHATBOT_MAX_SESSIONS_PER_DAY: !Ref SessionsQuotaPerUser
           BRIGHT_CHATBOT_MAX_REQUESTS_PER_SESSION: !Ref MessagesQuotaPerUserSession
-          BRIGHT_CHATBOT_ADMIN_USERS: !Ref AppAdminUsers
           BRIGHT_CHATBOT_DYNAMODB_TABLES_PREFIX: !Sub ${AppName}-
           STRIPE_API_KEY: !Ref StripeApiKey
       # Dead letter queue configuration
@@ -343,7 +354,8 @@ Resources:
         MaximumRetryAttempts: 0
       Tags:
         managed_by: "CloudFormation"
-        application: !Ref AppName
+        Application: !Ref AppName
+        Environment: !Ref AppEnvironment
 
 
 Outputs:
