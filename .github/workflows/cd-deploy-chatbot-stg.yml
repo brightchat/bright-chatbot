@@ -46,7 +46,7 @@ jobs:
     - name: SAM build
       id: sam-build
       working-directory: deploy/chatbot
-      run: sam build
+      run: sam build --debug
 
     - name: Deploy Changeset
       id: sam-deploy
