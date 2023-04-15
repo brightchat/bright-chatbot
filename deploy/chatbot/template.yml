@@ -18,15 +18,20 @@ Parameters:
   WhatsAppBusinessAuthToken:
     Type: String
     Description: Auth token for the WhatsApp Business API
+    Sensitive: true
+    NoEcho: true
   WhatsAppBusinessPhoneNumberId:
     Type: String
     Description: Phone number Id associated with your WhatsApp Business API account to send messages from.
+    NoEcho: true
   WhatsAppBusinessFromPhoneNumber:
     Type: String
     Description: Phone number associated with your WhatsApp Business API account to send messages from.
+    NoEcho: true
   AdminEmail:
     Type: String
     Description: Email address of the application's admin user for notifications.
+    NoEcho: true
   BotImageGenerationSize:
     Type: String
     Default: small
@@ -35,12 +40,15 @@ Parameters:
   OpenAIAPIKey:
     Type: String
     Description: API key associated with an OpenAI account.
+    NoEcho: true
   BrightChatBotSecretKey:
     Type: String
     Description: A secure secret key for the application.
+    NoEcho: true
   StripeApiKey:
     Type: String
     Description: API key used to authenticate to the Stripe API
+    NoEcho: true
   SessionsExpirationMinutes:
     Type: Number
     Description: Number of minutes a user session has until it expires from the time of creation.
@@ -72,6 +80,7 @@ Parameters:
     Type: String
     Description: DSN of the Sentry project to send errors to.
     Default: ""
+    NoEcho: true
 Resources:
   # === DynamoDB Tables ====
   ## --- Application Tables ---
