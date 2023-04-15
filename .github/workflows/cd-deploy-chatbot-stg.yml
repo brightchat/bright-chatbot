@@ -33,7 +33,7 @@ jobs:
       id: configure-sam
       uses: aws-actions/setup-sam@v2
       with:
-        python: true
+        python: python
 
     - name: Configure AWS credentials
       id: creds
