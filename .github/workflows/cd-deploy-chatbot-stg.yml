@@ -1,8 +1,7 @@
 name: "Deploy Staging CloudFormation Stack"
 
 on:
-  # push:
-  pull_request: #! TODO: Remove this line and uncomment the line above
+  push:
     # branches: ['main']
     branches: ['test-cd-#865c4zpgw'] #! TODO: Remove this line and uncomment the line above
     paths:
