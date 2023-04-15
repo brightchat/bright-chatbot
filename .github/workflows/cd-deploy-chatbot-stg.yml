@@ -32,8 +32,8 @@ jobs:
     - name: Configure SAM CLI
       id: configure-sam
       uses: aws-actions/setup-sam@v2
-        with:
-          python: true
+      with:
+        python: true
 
     - name: Configure AWS credentials
       id: creds
