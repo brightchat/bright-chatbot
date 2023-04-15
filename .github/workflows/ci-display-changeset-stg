@@ -1,0 +1,82 @@
+name: "Display Staging CloudFormation Changeset"
+
+on:
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'deploy/chatbot/template.yml'
+      - 'deploy/chatbot/package/**'
+      - 'bright_chatbot/**'
+
+jobs:
+  display-changeset:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      id: checkout
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.9"
+
+    - name: Configure SAM CLI
+      id: configure-sam
+      uses: aws-actions/setup-sam@v2
+
+    - name: Configure AWS credentials
+      id: creds
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+        role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+        role-duration-seconds: 1200
+
+    - name: SAM build
+      id: sam-build
+      working-directory: cloudformation
+      run: sam build
+
+    - name: Generate Cloudformation Changeset
+      id: sam-generate-plan
+      working-directory: cloudformation
+      run: |
+        sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot-dev --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+            ParameterKey=AppName,ParameterValue=brightbot-dev \
+            ParameterKey=AppEnvironment,ParameterValue=Staging \
+            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_AUTH_TOKEN}} \
+            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
+            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.STG_WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
+            ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.STG_OPENAI_API_KEY}} \
+            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.STG_BRIGHT_CHATBOT_SECRET_KEY}} \
+            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STG_STRIPE_API_KEY}} \
+            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}} \
+            ParameterKey=LambdaLogLevel,ParameterValue=DEBUG \
+          | tee sam-generate-plan.out
+        echo 'CHANGESET_OUT<<EOF' >> $GITHUB_ENV
+        cat sam-generate-plan.out >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+
+    - name: Display Changeset on PR
+      id: display-changeset-pr
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: CloudFormation Changeset Plan - Staging
+        message: |
+          ## CloudFormation Changeset
+
+          A CloudFormation plan was generated from the changes in this PR. No modifications have been done yet.
+          
+          Merging the PR into the `main` branch of the repository might automatically deploy the changes shown below:
+
+          <details>
+          <summary>Click to toggle the CloudFormation Changeset</summary>
+          
+          ```raw
+          ${{ env.CHANGESET_OUT }}
+          ```
+          
+          </details>
