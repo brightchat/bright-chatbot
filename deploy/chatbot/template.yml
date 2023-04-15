@@ -18,7 +18,6 @@ Parameters:
   WhatsAppBusinessAuthToken:
     Type: String
     Description: Auth token for the WhatsApp Business API
-    Sensitive: true
     NoEcho: true
   WhatsAppBusinessPhoneNumberId:
     Type: String
