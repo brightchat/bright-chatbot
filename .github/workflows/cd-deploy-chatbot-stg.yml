@@ -2,8 +2,7 @@ name: "Deploy Staging CloudFormation Stack"
 
 on:
   push:
-    # branches: ['main']
-    branches: ['test-cd-#865c4zpgw'] #! TODO: Remove this line and uncomment the line above
+    branches: ['main']
     paths:
       - 'deploy/chatbot/template.yml'
       - 'deploy/chatbot/package/**'
