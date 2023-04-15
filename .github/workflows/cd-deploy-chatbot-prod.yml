@@ -7,6 +7,10 @@ on:
   release:
     types: [released]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy-changes:
     runs-on: ubuntu-latest
