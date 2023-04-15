@@ -35,6 +35,8 @@ class WhatsAppBusinessClient:
         """
         Send a WhatsApp message to an user using the WhatsApp Business API.
         """
+        print("Yayy alguien esta mandando un mensaje")
+        
         if not (message or template or image_url):
             raise ValueError("Either a message or template must be provided.")
         data = {
