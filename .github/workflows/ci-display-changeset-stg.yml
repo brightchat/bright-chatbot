@@ -39,12 +39,12 @@ jobs:
 
     - name: SAM build
       id: sam-build
-      working-directory: cloudformation
+      working-directory: deploy/chatbot
       run: sam build
 
     - name: Generate Cloudformation Changeset
       id: sam-generate-plan
-      working-directory: cloudformation
+      working-directory: deploy/chatbot
       run: |
         sam deploy --no-execute-changeset --no-fail-on-empty-changeset --stack-name brightbot-dev --resolve-s3 \
             --capabilities CAPABILITY_IAM \
