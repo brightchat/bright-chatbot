@@ -224,14 +224,14 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         if not subscription_data:
             return None
         # Get the first active or trialing subscription:
-        subscription = None
+        active_subscription = None
         for subscription in subscription_data:
             if subscription["status"] in ("active", "trialing"):
-                subscription = subscription
+                active_subscription = subscription
                 break
-        if not subscription:
+        if not active_subscription:
             return None
-        product_id = subscription["plan"]["product"]
+        product_id = active_subscription["plan"]["product"]
         products = stripe.Product.list(active=True, limit=100)
         products_df = pd.DataFrame(products["data"])
         customer_product = products_df[products_df["id"] == product_id].iloc[0]
