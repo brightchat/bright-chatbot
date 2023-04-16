@@ -61,12 +61,13 @@ jobs:
             --parameter-overrides \
             ParameterKey=AppName,ParameterValue=brightbot \
             ParameterKey=AppEnvironment,ParameterValue=Production \
-            ParameterKey=AdminEmail,ParameterValue=${{vars.ADMIN_EMAIL}} \
+            ParameterKey=AppVersion,ParameterValue=${{ github.event.release.tag_name }} \
+            ParameterKey=AdminEmail,ParameterValue=${{ vars.ADMIN_EMAIL }} \
             ParameterKey=LambdaLogLevel,ParameterValue=WARNING \
-            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{secrets.WHATSAPP_BUSINESS_AUTH_TOKEN}} \
-            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{secrets.WHATSAPP_BUSINESS_PHONE_NUMBER_ID}} \
-            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{secrets.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER}} \
-            ParameterKey=OpenAIAPIKey,ParameterValue=${{secrets.OPENAI_API_KEY}} \
-            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{secrets.BRIGHT_CHATBOT_SECRET_KEY}} \
-            ParameterKey=StripeApiKey,ParameterValue=${{secrets.STRIPE_API_KEY}} \
-            ParameterKey=SentryDSN,ParameterValue=${{secrets.SENTRY_DSN}}
+            ParameterKey=WhatsAppBusinessAuthToken,ParameterValue=${{ secrets.WHATSAPP_BUSINESS_AUTH_TOKEN }} \
+            ParameterKey=WhatsAppBusinessPhoneNumberId,ParameterValue=${{ secrets.WHATSAPP_BUSINESS_PHONE_NUMBER_ID }} \
+            ParameterKey=WhatsAppBusinessFromPhoneNumber,ParameterValue=${{ secrets.WHATSAPP_BUSINESS_FROM_PHONE_NUMBER }} \
+            ParameterKey=OpenAIAPIKey,ParameterValue=${{ secrets.OPENAI_API_KEY }} \
+            ParameterKey=BrightChatBotSecretKey,ParameterValue=${{ secrets.BRIGHT_CHATBOT_SECRET_KEY }} \
+            ParameterKey=StripeApiKey,ParameterValue=${{ secrets.STRIPE_API_KEY }} \
+            ParameterKey=SentryDSN,ParameterValue=${{ secrets.SENTRY_DSN }}
