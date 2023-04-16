@@ -15,6 +15,10 @@ Parameters:
     AllowedValues:
       - Staging
       - Production
+  AppVersion:
+    Type: String
+    Default: ""
+    Description: Version of the Application, such as a git commit hash
   WhatsAppBusinessAuthToken:
     Type: String
     Description: Auth token for the WhatsApp Business API
@@ -339,6 +343,7 @@ Resources:
         Variables:
           SENTRY_DSN: !Ref SentryDSN
           SENTRY_ENVIRONMENT: !Ref AppEnvironment
+          SENTRY_RELEASE: !Ref AppVersion
           WHATSAPP_BUSINESS_AUTH_TOKEN: !Ref WhatsAppBusinessAuthToken
           WHATSAPP_BUSINESS_PHONE_NUMBER_ID: !Ref WhatsAppBusinessPhoneNumberId
           WHATSAPP_BUSINESS_FROM_PHONE_NUMBER : !Ref WhatsAppBusinessFromPhoneNumber
