@@ -59,7 +59,7 @@ jobs:
         ls .aws-sam/build/BackendLambdaFunction
 
     - name: List bright_chatbot directory
-      id: list-lambda-dir
+      id: list-root-dir
       working-directory: deploy/chatbot
       run: |
         ls ../../
