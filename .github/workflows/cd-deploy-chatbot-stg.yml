@@ -64,6 +64,12 @@ jobs:
       run: |
         ls ../../
 
+    - name: Install bright_chatbot package in lambda function directory
+      id: install-package
+      working-directory: deploy/chatbot
+      run: |
+        pip install ../../ -t .aws-sam/build/BackendLambdaFunction
+
     - name: Execute lambda function
       id: execute-lambda
       working-directory: deploy/chatbot/.aws-sam/build/BackendLambdaFunction
