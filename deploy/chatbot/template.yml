@@ -334,7 +334,7 @@ Resources:
       MemorySize: 512
       PackageType: Zip
       CodeUri: ./package
-      ReservedConcurrentExecutions: 10
+      ReservedConcurrentExecutions: 100
       Environment:
         Variables:
           SENTRY_DSN: !Ref SentryDSN

@@ -15,8 +15,8 @@ UNEXPECTED_ERROR = ApplicationError(
 
 QUOTA_SURPASSED = ApplicationError(
     message=(
-        "You have reached the maximum number of messages you can send for this session.\n"
-        "Increase your message quota at https://brightbot.chat/."
+        "You have reached the maximum number of messages you can send for this period.\n"
+        "Increase your messages quota at https://brightbot.chat/."
     ),
     status_code=429,
 )
@@ -31,7 +31,7 @@ MAX_ACTIVE_SESSIONS_SURPASSED = ApplicationError(
 
 IMAGE_GENERATION_QUOTA_SURPASSED = ApplicationError(
     message=(
-        "You have reached the maximum number of images you can generate for this session.\n"
+        "You have reached the maximum number of images you can generate for this period.\n"
         "Increase your image quota at https://brightbot.chat/."
     ),
     status_code=429,

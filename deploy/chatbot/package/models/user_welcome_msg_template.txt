@@ -2,7 +2,7 @@ Welcome to the chat with BrightBot! You can start a conversation with our AI cha
 
 By sending messages in the chat you are agreeing to our Privacy Policy https://brightbot.chat/privacy and Terms and Conditions https://brightbot.chat/cookies#Terms%20and%20Conditions.
 
-Want to generate images? Tell BrightBot to use 'Dalia' to generate an image for you or use the command '/img' followed by the prompt.
+Want to generate images? Tell BrightBot to use 'Dalia' to generate an image for you or type /img followed by the description of the image.
 
 If you want to end the conversation, you can type '/end' or '/bye'.
 For a list of possible commands, type '/help'.
