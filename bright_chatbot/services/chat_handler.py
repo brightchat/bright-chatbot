@@ -4,6 +4,7 @@ from typing import Any, Dict, Tuple, Union
 
 from bright_chatbot.services._base_handler import OpenAITaskBaseHandler
 from bright_chatbot import models
+from bright_chatbot.client import errors
 
 
 class ChatReplyHandler(OpenAITaskBaseHandler):
@@ -21,7 +22,10 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
         communication provider.
         """
         self.logger.info(f"Generating answer from user prompt: '{prompt}'")
-        txt_answer = self._generate_answer(prompt)
+        try:
+            txt_answer = self._generate_answer(prompt)
+        except self.openai.InvalidRequestError as e:
+            errors.INVALID_REQUEST_ERROR.raise_error(e)
         self.logger.info(f"Model generated the answer: '{txt_answer}'")
         parsed_answer = self._parse_model_answer(txt_answer)
         response = models.MessageResponse(

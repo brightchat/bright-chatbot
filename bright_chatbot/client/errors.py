@@ -10,8 +10,8 @@ MODERATION_ERROR = ApplicationError(
 
 INVALID_REQUEST_ERROR = ApplicationError(
     message=(
-        "Sorry, your request could not be fulfilled, "
-        "possibly because it was not allowed by our safety system."
+        "Sorry, your request could not be fulfilled. It may have content "
+        "that is not allowed by our safety system."
     ),
     status_code=400,
 )
