@@ -74,7 +74,7 @@ class DynamoSessionAuthBackend(DynamodbBackend):
             f"With a maximum quota of {plan.messages_quota} {plan.quota_reset_period} messages and {plan.image_generation_quota} image generations. "
             "They can also refer their friends and colleagues to get free rewards on their subscription plan "
             f"by sending them their referral link '{referral_link}'."
-            f"The platformm where the user is running the application is {settings.RUNNING_PLATFORM}"
+            f"The platform where the user is running the application is {settings.RUNNING_PLATFORM}"
             "Here are some useful links for if the user asks for them:\n"
             "- Our website: https://brightbot.chat\n"
             "- Our FAQ: https://brightbot.chat/faq\n"

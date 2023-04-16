@@ -74,15 +74,9 @@ class ChatHistory(BaseModel):
         at the beginning of the chat
         """
         session_status_prompt: str = settings.SESSION_STATUS_PROMPT
-        session_start = self.session.session_start
         return session_status_prompt.format(
-            week_day=session_start.strftime("%A"),
-            month=session_start.strftime("%B"),
-            day=session_start.day,
-            year=session_start.year,
-            hour=session_start.hour,
-            minute=session_start.minute,
-            second=session_start.second,
+            session_start_iso=self.session.session_start.isoformat(),
+            session_end_iso=self.session.session_end.isoformat(),
             session_quota=self.session.session_quota,
         ).strip()
 
