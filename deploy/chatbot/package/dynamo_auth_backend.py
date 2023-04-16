@@ -205,57 +205,34 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         """
         Checks if the user has an active subscription with Stripe
         """
-        active_customers = self._get_active_stripe_customers()
         user_number = "+" + user.user_id.split("+")[-1]
-        if (
-            active_customers.empty
-            or not user_number in active_customers["customer_phone"].values
-        ):
-            return None
-        subscription_data = active_customers[
-            active_customers["customer_phone"] == user_number
-        ].iloc[0]
-        return subscription_data["product_name"]
+        user_stripe_subscription = self._get_stripe_customer_subscription(user_number)
+        return user_stripe_subscription
 
-    def _get_active_stripe_customers(self) -> pd.DataFrame:
+    def _get_stripe_customer_subscription(self, user_number: str) -> Union[str, None]:
         """
-        Retrieves all customers in Stripe that are considered active.
-        ie. Those that have an active subscription or are in trial.
+        Given a phone number, returns the name of the subscription plan
+        that the user has in Stripe.
         """
-        active_subscriptions = stripe.Subscription.list(status="active")
-        trial_subscriptions = stripe.Subscription.list(status="trialing")
-        active_subscriptions_df = pd.DataFrame(active_subscriptions["data"])
-        trial_subscriptions_df = pd.DataFrame(trial_subscriptions["data"])
-        # Join active and trial subscriptions:
-        active_subscriptions_df = pd.concat(
-            [active_subscriptions_df, trial_subscriptions_df]
+        customers = stripe.Customer.search(
+            query=f"phone:'{user_number}'", expand=["data.subscriptions"]
         )
-        if active_subscriptions_df.empty:
-            return active_subscriptions_df
-        # Retrieve product names:
-        active_subscriptions_df["product_id"] = active_subscriptions_df["plan"].apply(
-            lambda x: x["product"]
-        )
-        products = stripe.Product.list(active=True)
+        if customers.is_empty:
+            return None
+        customer_data = pd.json_normalize(customers.data).iloc[0]
+        subscription_data = customer_data["subscriptions.data"]
+        if not subscription_data:
+            return None
+        # Get the first active or trialing subscription:
+        subscription = None
+        for subscription in subscription_data:
+            if subscription["status"] in ("active", "trialing"):
+                subscription = subscription
+                break
+        if not subscription:
+            return None
+        product_id = subscription["plan"]["product"]
+        products = stripe.Product.list(active=True, limit=100)
         products_df = pd.DataFrame(products["data"])
-        # Merge product names with active subscriptions:
-        subscriptions = active_subscriptions_df.merge(
-            products_df[["id", "name", "default_price"]].rename(
-                columns={"name": "product_name", "id": "product_id"}
-            ),
-            on="product_id",
-        ).rename(columns={"customer": "customer_id"})
-        # Retrieve customer emails and phone numbers:
-        customers_df = pd.DataFrame(stripe.Customer.list()["data"]).rename(
-            columns={
-                "id": "customer_id",
-                "email": "customer_email",
-                "phone": "customer_phone",
-            }
-        )
-        # Merge customers data with active subscriptions:
-        active_customers_df = subscriptions.merge(
-            customers_df[["customer_id", "customer_email", "customer_phone"]],
-            on="customer_id",
-        )
-        return active_customers_df
+        customer_product = products_df[products_df["id"] == product_id].iloc[0]
+        return customer_product["name"]
