@@ -67,9 +67,9 @@ class DynamoSessionAuthBackend(DynamodbBackend):
         referral_link = self._get_user_referral_link(user)
         extra_content_system_prompt = (
             "There are a total of 3 subscriptions plans available for the service. "
-            "The Basic plan is free and allows up to 20 messages and 1 image generation in total "
-            "The Standard plan costs $4.99 per month and allows up to 50 messages and 5 image generations per day "
-            "The Premium plan costs $14.99 per month and allows up to 250 messages and 10 high-resolution image generations per day. "
+            "The 'BrightBot Basic' plan is free and allows up to 20 messages and 1 image generation in total "
+            "The 'BrightBot Standard' plan costs $4.99 per month and allows up to 50 messages and 5 image generations per day "
+            "The 'BrightBot Premium' plan costs $14.99 per month and allows up to 250 messages and 10 high-resolution image generations per day. "
             f"The user is on the '{plan.name}' Suscription Plan of the service. "
             f"With a maximum quota of {plan.messages_quota} {plan.quota_reset_period} messages and {plan.image_generation_quota} image generations. "
             "They can also refer their friends and colleagues to get free rewards on their subscription plan "
@@ -146,18 +146,19 @@ class DynamoSessionAuthBackend(DynamodbBackend):
                 f"User has subscription '{user_subscription}'"
             )
             if user_subscription in (
-                "BrightBot Standard",
-                "Standard Plan",
-                "Standard Test Plan",
-                BrightBotPlans.StandardPlan.id,
+                BrightBotPlans.StandardPlan.name,
+                BrightBotPlans.StandardPlan.id
             ):
                 plan = BrightBotPlans.StandardPlan
             elif user_subscription in (
-                "BrightBot Unlimited",
-                "Premium Plan",
-                BrightBotPlans.PremiumPlan.id,
+                BrightBotPlans.PremiumPlan.name,
+                BrightBotPlans.PremiumPlan.id
             ):
                 plan = BrightBotPlans.PremiumPlan
+            else:
+                raise ValueError(
+                    f"Subscription Plan '{user_subscription}' not detected"
+                )
         else:
             logging.getLogger("bright_chatbot").debug(
                 f"User does not have a subscription"
