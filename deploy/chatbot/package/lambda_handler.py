@@ -36,6 +36,8 @@ def lambda_handler(event: Dict[str, Any], context) -> Dict[str, Any]:
         print(f"Received event:\n{json.dumps(event)}")
     # Parse event:
     body = json.loads(event["body"])
+    # Set the Running Platform:
+    os.environ["BRIGHT_CHATBOT_RUNNING_PLATFORM"] = body.get("platform", "WhatsApp")
     # Initiate provider and backend:
     provider = WhatsAppBusinessProvider()
     backend = DynamoSessionAuthBackend()
