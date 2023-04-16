@@ -4,7 +4,7 @@ By sending messages in the chat you are agreeing to our Privacy Policy https://b
 
 Want to generate images? Tell BrightBot to use 'Dalia' to generate an image for you or type /img followed by the description of the image.
 
-If you want to end the conversation, you can type '/end' or '/bye'.
+If you want to end the current conversation, you can type '/end' or '/bye'.
 For a list of possible commands, type '/help'.
 
 You have the '{SUBSCRIPTION_PLAN_NAME}' Subscription plan, which lets you send {SUBSCRIPTION_PLAN_MESSAGE_QUOTA} messages {SUBSCRIPTION_PLAN_RESET_PERIOD}.

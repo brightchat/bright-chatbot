@@ -26,7 +26,7 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
         Generates a response to a command prompt.
         """
         self.logger.info(f"Generating a response to the command: '{prompt.body}'")
-        if prompt.body in ["/exit", "/quit", "/reset", "/bye"]:
+        if prompt.body in ["/exit", "/quit", "/reset", "/bye", "/end"]:
             output = self._handle_end_session_cmd(prompt, user_session)
         # Match /img or /image command followed by a space and then the image prompt
         elif re.match(self._IMG_CMD_REGEX, prompt.body):
@@ -97,7 +97,7 @@ class ChatCommandsHandler(OpenAITaskBaseHandler):
         response = MessageResponse(
             body="Here's a list of commands you can use:\n\n"
             "/help - Show this message\n"
-            "/reset or /quit - End the chat session\n"
+            "/end or /bye - End the chat session\n"
             "/image <prompt> or /img <prompt> - Generate an image using the given prompt\n"
             "/referral - Get a link to refer your friends\n"
             "/referral <code> - Use a referral code to get a discount\n",
