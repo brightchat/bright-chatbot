@@ -46,35 +46,11 @@ jobs:
       working-directory: deploy/chatbot
       run: sam build --debug
 
-    - name: List build directory
-      id: list-build-dir
-      working-directory: deploy/chatbot
-      run: |
-        ls .aws-sam/build
-    
-    - name: List lambda function directory
-      id: list-lambda-dir
-      working-directory: deploy/chatbot
-      run: |
-        ls .aws-sam/build/BackendLambdaFunction
-
-    - name: List bright_chatbot directory
-      id: list-root-dir
-      working-directory: deploy/chatbot
-      run: |
-        ls ../../
-
-    - name: Install bright_chatbot package in lambda function directory
+    - name: Install package in lambda function directory
       id: install-package
       working-directory: deploy/chatbot
       run: |
         pip install ../../ -t .aws-sam/build/BackendLambdaFunction
-
-    - name: Execute lambda function
-      id: execute-lambda
-      working-directory: deploy/chatbot/.aws-sam/build/BackendLambdaFunction
-      run: |
-        python -c "from lambda_handler import lambda_handler; lambda_handler({}, {})"
 
     - name: Deploy Changeset
       id: sam-deploy
