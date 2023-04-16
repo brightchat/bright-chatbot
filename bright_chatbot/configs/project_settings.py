@@ -20,6 +20,13 @@ class ProjectSettings(BaseSettings):
         use_threading = self.get("USE_MULTI_THREADING", "true")
         return use_threading.lower() == "true"
 
+    @property
+    def RUNNING_PLATFORM(self) -> Literal["WhatsApp"]:
+        """
+        Name of the platform the application is running on.
+        """
+        return self.get("RUNNING_PLATFORM", "WhatsApp")
+
     # === Admin Users Settings ====
 
     @property
