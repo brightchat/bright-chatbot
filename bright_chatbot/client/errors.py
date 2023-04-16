@@ -2,10 +2,18 @@ from bright_chatbot.models.errors import ApplicationError
 
 MODERATION_ERROR = ApplicationError(
     message=(
-        "The message you sent was flagged by OpenAI's moderation model. "
+        "The message you sent was flagged by the message moderation system. "
         "Please try again with a different message."
     ),
     status_code=422,
+)
+
+INVALID_REQUEST_ERROR = ApplicationError(
+    message=(
+        "Sorry, your request could not be fulfilled, "
+        "possibly because it was not allowed by our safety system."
+    ),
+    status_code=400,
 )
 
 UNEXPECTED_ERROR = ApplicationError(

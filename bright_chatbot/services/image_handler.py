@@ -27,11 +27,16 @@ class ImageGenerationHandler(OpenAITaskBaseHandler):
         ):
             self.logger.info("User has reached the quota of image generation requests")
             errors.IMAGE_GENERATION_QUOTA_SURPASSED.raise_error()
-        image_url = self._generate_image(
-            image_prompt,
-            prompt,
-            img_size=user_session.session_config.image_generation_size,
-        )
+        # Catch a rejected request from OpenAI
+        try:
+            image_url = self._generate_image(
+                image_prompt,
+                prompt,
+                img_size=user_session.session_config.image_generation_size,
+            )
+        except self.openai.InvalidRequestError as e:
+            self.logger.exception("OpenAI rejected the image generation request")
+            raise errors.INVALID_REQUEST_ERROR.exception from e
         response = models.MessageResponse(
             body=image_prompt, media_url=image_url, to_user=prompt.from_user
         )
