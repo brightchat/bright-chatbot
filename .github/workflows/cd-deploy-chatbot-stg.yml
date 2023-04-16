@@ -2,12 +2,11 @@ name: "Deploy Staging CloudFormation Stack"
 
 on:
   push:
-    # branches: ['main']
-    branches: ['fix-cd-#865c506ub'] #! TODO: REMOVE THIS LINE AND UNCOMMENT ABOVE
-    # paths: #! TODO: UNCOMMENT ALL BELOW
-    #   - 'deploy/chatbot/template.yml'
-    #   - 'deploy/chatbot/package/**'
-    #   - 'bright_chatbot/**'
+    branches: ['main']
+    paths:
+      - 'deploy/chatbot/template.yml'
+      - 'deploy/chatbot/package/**'
+      - 'bright_chatbot/**'
 
 permissions:
   id-token: write
@@ -44,7 +43,7 @@ jobs:
     - name: SAM build
       id: sam-build
       working-directory: deploy/chatbot
-      run: sam build --debug
+      run: sam build
 
     - name: Install package in lambda function directory
       id: install-package

@@ -22,6 +22,14 @@ jobs:
       id: checkout
       uses: actions/checkout@v3
 
+    - name: Configure AWS credentials
+      id: creds
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+        role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+        role-duration-seconds: 1200
+
     - name: Setup Python
       uses: actions/setup-python@v3
       with:
@@ -31,18 +39,16 @@ jobs:
       id: configure-sam
       uses: aws-actions/setup-sam@v2
 
-    - name: Configure AWS credentials
-      id: creds
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-region: ${{ vars.AWS_DEFAULT_REGION }}
-        role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
-        role-duration-seconds: 1200
-
     - name: SAM build
       id: sam-build
       working-directory: deploy/chatbot
       run: sam build
+
+    - name: Install package in lambda function directory
+      id: install-package
+      working-directory: deploy/chatbot
+      run: |
+        pip install ../../ -t .aws-sam/build/BackendLambdaFunction
 
     - name: Deploy Changeset
       id: sam-deploy
