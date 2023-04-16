@@ -320,8 +320,6 @@ Resources:
   BackendLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Architectures:
-        - arm64
       Runtime: python3.9
       FunctionName: !Sub
         - "${AppName}-BackendLambdaFunction"
@@ -336,7 +334,7 @@ Resources:
       MemorySize: 512
       PackageType: Zip
       CodeUri: ./package
-      ReservedConcurrentExecutions: 10
+      ReservedConcurrentExecutions: 100
       Environment:
         Variables:
           SENTRY_DSN: !Ref SentryDSN

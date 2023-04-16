@@ -46,6 +46,13 @@ jobs:
       working-directory: deploy/chatbot
       run: sam build --debug
 
+    - name: List build directory
+      id: list-build-dir
+      working-directory: deploy/chatbot
+      run: |
+        ls .aws-sam/build
+        ls .aws-sam/build/BackendLambdaFunction
+
     - name: Deploy Changeset
       id: sam-deploy
       working-directory: deploy/chatbot
