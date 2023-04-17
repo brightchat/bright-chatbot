@@ -41,9 +41,28 @@ class ChatHistory(BaseModel):
                     "content": self.session.session_config.extra_content_system_prompt,
                 }
             )
-        for message in self.messages:
-            chat_history_repr.append(message.to_chat_repr())
+        # Only use the messages that don't exceed the chat completion length limit
+        # Go backwards in the list of messages to get the most recent ones
+        for msg_idx in range(len(self.messages) - 1, -1, -1):
+            if (
+                self.get_concat_chat_length(
+                    [*chat_history_repr, self.messages[msg_idx].to_chat_repr()]
+                )
+                >= settings.CHAT_COMPLETION_LENGTH_LIMIT
+            ):
+                settings.logger.debug(
+                    f"Chat completion length limit reached, using only the last {len(chat_history_repr)} messages"
+                )
+                break
+            chat_history_repr.append(self.messages[msg_idx].to_chat_repr())
         return chat_history_repr
+
+    def get_concat_chat_length(self, messages_repr: List[Dict[str, str]] = None) -> int:
+        """
+        Returns the total length of the chat history
+        when concatenated as a single string
+        """
+        return sum(len(message["content"]) for message in messages_repr)
 
     def refresh_from_backend(
         self,

@@ -63,7 +63,7 @@ class ChatReplyHandler(OpenAITaskBaseHandler):
             model="gpt-3.5-turbo",
             messages=chat_history,
             user=prompt.from_user.hashed_user_id,
-            max_tokens=420,
+            max_tokens=430,
         )
         answer_txt = completion.choices[0].message.content.strip()
         return answer_txt

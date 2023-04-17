@@ -1,3 +1,4 @@
+import logging
 from typing import List, Literal
 
 from bright_chatbot.configs.base import BaseSettings
@@ -10,7 +11,6 @@ class ProjectSettings(BaseSettings):
     """
 
     # === General Settings ===
-
     @property
     def USE_MULTI_THREADING(self) -> bool:
         """
@@ -26,6 +26,21 @@ class ProjectSettings(BaseSettings):
         Name of the platform the application is running on.
         """
         return self.get("RUNNING_PLATFORM", "WhatsApp")
+
+    # === Logging Settings ===
+    @property
+    def LOGGER_NAME(self) -> str:
+        """
+        Name of the logger used throughout the application.
+        """
+        return self.get("LOGGER_NAME", "bright_chatbot")
+
+    @property
+    def logger(self) -> logging.Logger:
+        """
+        Logger used throughout the application.
+        """
+        return logging.getLogger(self.LOGGER_NAME)
 
     # === Admin Users Settings ====
 
@@ -81,6 +96,15 @@ class ProjectSettings(BaseSettings):
         return self.get("IMAGE_GENERATION_SIZE", "medium")
 
     # === Rate Limit Settings ===
+
+    @property
+    def MAX_CONCATENATED_CHAT_LENGTH(self) -> int:
+        """
+        Maximum length of the concatenated chat history.
+
+        :return: int
+        """
+        return self.get("MAX_CONCATENATED_CHAT_LENGTH", 1000, cast=int)
 
     @property
     def MAX_REQUESTS_PER_MINUTE(self) -> int:
